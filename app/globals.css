@@ -6,11 +6,11 @@
   --emerald-glow: rgba(16, 185, 129, 0.15);
 }
 
-@theme inline {
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-emerald-500: #10b981;
-  --color-emerald-400: #34d399;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
