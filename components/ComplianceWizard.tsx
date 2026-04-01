@@ -130,7 +130,7 @@ export default function ComplianceWizard() {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-12">
         <div className="relative">
-          <motion.div 
+          <motion.div
             className="absolute inset-0 bg-emerald-500/20 blur-[80px]"
             animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 3, repeat: Infinity }}
@@ -173,7 +173,7 @@ export default function ComplianceWizard() {
               {currentQuestion.description}
             </p>
             {/* [HUMAN TOUCH]: Pro-Tip for the buyer */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               className="p-4 bg-emerald-500/5 border-l-4 border-emerald-500 rounded-r-xl text-emerald-400 text-sm italic"
@@ -208,7 +208,7 @@ export default function ComplianceWizard() {
       {error && <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium">{error}</div>}
 
       <div className="flex items-center justify-end pt-12 border-t border-white/5">
-        <button 
+        <button
           onClick={next}
           disabled={!answers[currentQuestion.id] || isThinking}
           className="px-10 py-5 bg-emerald-500 text-black font-extrabold rounded-2xl hover:bg-emerald-400 disabled:opacity-30 flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
