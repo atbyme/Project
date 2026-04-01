@@ -36,7 +36,8 @@ export default function ComplianceWizard() {
   const reportRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (option: string) => {
-    setAnswers({ ...answers, [currentQuestion.id]: option });
+    // Record both the ID for internal tracking and also mapping the Title to Answer for AI contextual awareness
+    setAnswers({ ...answers, [currentQuestion.id]: option, [currentQuestion.title]: option });
   };
 
   const next = async () => {
@@ -83,12 +84,28 @@ export default function ComplianceWizard() {
     setIsDownloading(true);
     try {
       await logReportDownload("Shield AI Audit Bundle");
-      const canvas = await html2canvas(reportRef.current, { scale: 2, backgroundColor: '#000000' });
-      const imgData = canvas.toDataURL('image/png');
+      const canvas = await html2canvas(reportRef.current, { scale: 1.2, backgroundColor: '#000000', useCORS: true, logging: false });
+      const imgData = canvas.toDataURL('image/jpeg', 0.7); // Dramatically reduces 38MB payload
+      
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgHeightInPdf = (canvas.height * pdfWidth) / canvas.width;
+      
+      let heightLeft = imgHeightInPdf;
+      let position = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightInPdf);
+      heightLeft -= pdfHeight;
+
+      // Slice the oversized canvas onto multiple pages if it spills over
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeightInPdf;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightInPdf);
+        heightLeft -= pdfHeight;
+      }
+      
       pdf.save(`Compliance_Audit_${Date.now()}.pdf`);
     } catch (err) {
       console.error('Download failed:', err);

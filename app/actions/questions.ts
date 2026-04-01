@@ -5,6 +5,7 @@ import { checkBotScore } from '@/lib/bot-protection';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { headers } from 'next/headers';
 
+
 /**
  * Generate Next Dynamic Question
  * Uses AI to create a unique, logical next step based on the user's audit context.
@@ -19,6 +20,7 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
     // don't count towards the 5-report final bundle limit.
 
     const history = Object.entries(previousAnswers)
+      .filter(([q, a]) => q.includes(' ') || q === 'industry') // Only show the full titles in history to avoid confusing AI with IDs
       .map(([q, a]) => `Q: ${q}, A: ${a}`)
       .join('\n');
 
@@ -44,10 +46,11 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
       Do not include any other text or markdown.
     `;
 
-    const response = await callOpenRouter(prompt, 'openrouter/free');
-    
-    // Safety check for raw JSON
-    const jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
+    const response = await callOpenRouter(prompt, 'openai/gpt-4o-mini', 800);
+    // Extract only the JSON object, ignoring conversational text
+    const match = response.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Could not parse JSON from AI response.");
+    const jsonStr = match[0];
     const question = JSON.parse(jsonStr);
 
     return { success: true, data: question };

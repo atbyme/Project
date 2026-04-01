@@ -12,6 +12,8 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { checkBotScore } from '@/lib/bot-protection';
 import { headers } from 'next/headers';
 
+
+
 export async function generateComplianceReport(rawAnswers: any) {
   try {
     // 0. Security: Bot Protection
@@ -60,15 +62,15 @@ export async function generateComplianceReport(rawAnswers: any) {
       Only return the instructions. No intro.
     `;
 
-    // Use a fast model for the Architect step (8B or similar)
-    const masterPrompt = await callOpenRouter(architectPrompt, 'meta-llama/llama-3-8b-instruct:free');
+    // Use a fast model for the Architect step
+    const masterPrompt = await callOpenRouter(architectPrompt, 'openai/gpt-4o-mini', 300);
     console.timeEnd('AI_Architect_Step');
     if (!masterPrompt) throw new Error('AI Architect failed.');
 
     // 3. Phase 2: The "Expert Writer" Step (Executing the Master Prompt)
     console.time('AI_Writer_Step');
     console.log('AI Expert: Synthesizing the final compliance bundle...');
-    const finalReport = await callOpenRouter(masterPrompt, 'openrouter/free');
+    const finalReport = await callOpenRouter(masterPrompt, 'openai/gpt-4o-mini', 2000);
     console.timeEnd('AI_Writer_Step');
 
     return { 
