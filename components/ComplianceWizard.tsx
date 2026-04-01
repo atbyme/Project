@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, ChevronRight, ChevronLeft, Shield, Zap, Lock, Info, FileText, Download, RotateCcw } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ChevronLeft, Shield, Zap, Lock, Info, FileText, Download, RotateCcw, Loader2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { generateComplianceReport } from '@/app/actions/generateCompliance';
+import { logReportDownload } from '@/app/actions/audit';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -93,6 +96,8 @@ export default function ComplianceWizard() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const handleSelect = (option: string) => {
     const question = QUESTIONS[currentStep];
@@ -132,8 +137,32 @@ export default function ComplianceWizard() {
     }
   };
 
-  const prev = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
+  const downloadPDF = async () => {
+    if (!reportRef.current || isDownloading) return;
+    
+    setIsDownloading(true);
+    try {
+      // 1. Audit Log (Buyer Value: Security Traceability)
+      await logReportDownload("Compliance Shield Bundle (V.2026)");
+
+      // 2. High-Fidelity PDF Generation
+      const canvas = await html2canvas(reportRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#000000',
+      });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Compliance_Shield_Audit_${Date.now()}.pdf`);
+    } catch (err) {
+      console.error('Download failed:', err);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (report) {
@@ -154,11 +183,16 @@ export default function ComplianceWizard() {
           </div>
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => window.print()}
-              className="px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+              onClick={downloadPDF}
+              disabled={isDownloading}
+              className="px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center gap-2 shadow-[0_0_30px_rgba(16,185,129,0.2)] disabled:opacity-50"
             >
-              <Download className="w-5 h-5" />
-              Download PDF
+              {isDownloading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Download className="w-5 h-5" />
+              )}
+              {isDownloading ? 'Logging...' : 'Download PDF'}
             </button>
             <button 
               onClick={() => window.location.reload()}
@@ -169,7 +203,10 @@ export default function ComplianceWizard() {
           </div>
         </div>
 
-        <div className="glass-card p-12 rounded-[2.5rem] prose prose-invert prose-emerald max-w-none">
+        <div 
+          ref={reportRef}
+          className="glass-card p-12 rounded-[2.5rem] prose prose-invert prose-emerald max-w-none bg-black"
+        >
           <ReactMarkdown>
             {report}
           </ReactMarkdown>
