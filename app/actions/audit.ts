@@ -25,21 +25,29 @@ export async function logReportDownload(reportTitle: string) {
       status: 'SUCCESS'
     };
 
-    // For the MVP, we log to a local JSON file to show the buyer "Audit Persistence"
-    const logPath = path.join(process.cwd(), 'audit-log.json');
+    // [SERVERLESS-SAFE] Special handling for Vercel:
+    // Vercel does NOT allow permanent file writing. We log to console for 
+    // real-time monitoring and use /tmp for temporary session persistence.
+    const logPath = path.join('/tmp', 'audit-log.json');
     
     let currentLogs = [];
     try {
       const data = await fs.readFile(logPath, 'utf8');
       currentLogs = JSON.parse(data);
     } catch (e) {
-      // File doesn't exist yet
+      // File doesn't exist yet or is inaccessible
     }
 
     currentLogs.push(logEntry);
-    await fs.writeFile(logPath, JSON.stringify(currentLogs, null, 2));
+    
+    // Attempt to write for the session (might not persist cross-restarts on Vercel)
+    try {
+      await fs.writeFile(logPath, JSON.stringify(currentLogs, null, 2));
+    } catch (e) {
+      // Silent fail for file-system restricted environments
+    }
 
-    console.log(`[AUDIT] Report Downloaded: ${reportTitle} | IP: ${ip} | Device: ${userAgent}`);
+    console.log(`[AUDIT-LOG] ${ip} | ${userAgent} | ${reportTitle}`);
     
     return { success: true, log: logEntry };
   } catch (error) {

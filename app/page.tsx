@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LandingPage() {
   return (
@@ -40,10 +41,10 @@ export default function LandingPage() {
               Designed for small firms that need security without the bureaucracy.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <button className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+              <Link href="/wizard" className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
                 Generate Your First Document Free
                 <ArrowRight className="w-5 h-5" />
-              </button>
+              </Link>
               <button className="w-full sm:w-auto px-8 py-4 bg-white/5 text-white font-semibold rounded-xl hover:bg-white/10 border border-white/10 transition-all">
                 View Sample Report
               </button>
@@ -120,9 +121,9 @@ export default function LandingPage() {
                       <span className="text-white/40">/month</span>
                     </div>
                   </div>
-                  <button className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-emerald-50 transition-all">
+                  <Link href="/wizard" className="block w-full py-4 bg-white text-black text-center font-bold rounded-xl hover:bg-emerald-50 transition-all">
                     Start Your Trial Free
-                  </button>
+                  </Link>
                   <p className="text-center text-xs text-white/30">No credit card required for trial</p>
                 </div>
               </div>
@@ -138,9 +139,9 @@ export default function LandingPage() {
             <p className="text-xl text-white/40 max-w-xl mx-auto leading-relaxed">
               Join 500+ firms that secure their clients using ComplianceShield AI.
             </p>
-            <button className="px-12 py-5 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+            <Link href="/wizard" className="inline-block px-12 py-5 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 hover:scale-105 transition-all shadow-[0_0_40px_rgba(16,185,129,0.2)]">
               Generate Your First Document Free
-            </button>
+            </Link>
           </div>
         </section>
       </main>

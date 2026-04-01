@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ComplianceShield AI (Phase 2 MVP)
 
-## Getting Started
+**ComplianceShield AI** is a world-class SaaS engine designed to automate GDPR, HIPAA, and industry-standard security audits for small-to-medium businesses. Built for the 2026 legal landscape.
 
-First, run the development server:
+## 🚀 Phase 2 Features (Current)
+- **Dynamic AI Consultant**: 10 context-aware questions generated on-the-fly by an AI Architect.
+- **2-Step AI Synthesis**: An "Architect" agent builds the prompt, and an "Expert" agent writes the final 2,000-word bundle.
+- **Professional PDF Engine**: 1-click high-fidelity PDF generation with linkable Table of Contents.
+- **Security Audit Trail**: Every download is silenty logged with IP, Device Type, and Timestamp for legal traceability.
+- **Enterprise Security**: Built-in IP-based Rate Limiting (5/hour) and Anti-Bot/Scraper protection.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ How to Use
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone & Install**:
+   ```bash
+   git clone <your-repo-url>
+   cd complianceshield-ai
+   npm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Environment Setup**:
+   Create a `.env.local` file in the root:
+   ```env
+   OPENROUTER_API_KEY=your_key_here
+   GEMINI_API_KEY=your_fallback_key_here
+   ```
 
-## Learn More
+3. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Start the Audit**:
+   Navigate to [http://localhost:3000/wizard](http://localhost:3000/wizard) and answer the 10 dynamic AI questions.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🏗️ Technical Stack
+- **Framework**: Next.js 15 (App Router)
+- **Styling**: Tailwind CSS (Dark Mode / Glassmorphism)
+- **Animations**: Framer Motion
+- **AI Models**: OpenRouter (Llama 3 70B Expert / 8B Architect)
+- **PDF Engine**: jsPDF + html2canvas
+- **Validation**: Zod (Strict Schema Enforcement)
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📧 Reviews & Feedback
+For any reviews, feedback, or custom implementation requests, please contact:
+**Email**: `cat.elegion38`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📊 Phase 3 Roadmap
+- [ ] **MongoDB Integration**: Permanent report storage & user sessions.
+- [ ] **Pro Dashboard**: A Bento-style dashboard for managing multiple compliance projects.
+- [ ] **Stripe Billing**: Tiered access for Professional and Enterprise users.
+
+---
+*Phase 2 Status: Professional MVP Ready.*

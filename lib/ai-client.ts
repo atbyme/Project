@@ -1,3 +1,10 @@
+/**
+ * OPENROUTER SECURITY CLIENT
+ * [ARCHITECT NOTE]: Using x-title and http-referer allows us to 
+ * professionalize our API footprint, preventing rate limits and 
+ * showcasing the "ComplianceShield" brand to AI providers.
+ */
+
 import { z } from 'zod';
 
 // Security Schema for Buyer Impression
@@ -14,11 +21,14 @@ export const ComplianceSchema = z.object({
   officer: z.string(),
 });
 
+
 export type ComplianceData = z.infer<typeof ComplianceSchema>;
 
 /**
- * OpenRouter Client Utility
- * Implements industry-standard headers and 2-step prompt logic.
+ * OPENROUTER SECURITY CLIENT
+ * [ARCHITECT NOTE]: Using x-title and http-referer allows us to 
+ * professionalize our API footprint, preventing rate limits and 
+ * showcasing the "ComplianceShield" brand.
  */
 export async function callOpenRouter(prompt: string, model: string = "openrouter/free") {
   const apiKey = process.env.OPENROUTER_API_KEY;
