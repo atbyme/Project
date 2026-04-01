@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { generateComplianceReport } from '@/app/actions/generateCompliance';
 import { logReportDownload } from '@/app/actions/audit';
 import { generateNextQuestion } from '@/app/actions/questions';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -109,6 +109,8 @@ export default function ComplianceWizard() {
       pdf.save(`Compliance_Audit_${Date.now()}.pdf`);
     } catch (err) {
       console.error('Download failed:', err);
+      alert('There was an issue generating the advanced PDF format. Falling back to simple print mode!');
+      window.print();
     } finally {
       setIsDownloading(false);
     }
