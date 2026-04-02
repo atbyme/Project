@@ -80,37 +80,20 @@ export default function ComplianceWizard() {
   };
 
   const downloadPDF = async () => {
-    if (!reportRef.current || isDownloading) return;
+    if (isDownloading) return;
     setIsDownloading(true);
     try {
+      // 1. Audit Log 
       await logReportDownload("Shield AI Audit Bundle");
-      const canvas = await html2canvas(reportRef.current, { scale: 1.2, backgroundColor: '#000000', useCORS: true, logging: false });
-      const imgData = canvas.toDataURL('image/jpeg', 0.7); // Dramatically reduces 38MB payload
       
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgHeightInPdf = (canvas.height * pdfWidth) / canvas.width;
-      
-      let heightLeft = imgHeightInPdf;
-      let position = 0;
+      // 2. Trigger native OS print dialog (Instant, High Quality PDF)
+      setTimeout(() => {
+         window.print();
+      }, 500);
 
-      pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightInPdf);
-      heightLeft -= pdfHeight;
-
-      // Slice the oversized canvas onto multiple pages if it spills over
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeightInPdf;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeightInPdf);
-        heightLeft -= pdfHeight;
-      }
-      
-      pdf.save(`Compliance_Audit_${Date.now()}.pdf`);
     } catch (err) {
       console.error('Download failed:', err);
-      alert('There was an issue generating the advanced PDF format. Falling back to simple print mode!');
-      window.print();
+      alert('There was an issue generating the PDF.');
     } finally {
       setIsDownloading(false);
     }
@@ -119,26 +102,31 @@ export default function ComplianceWizard() {
   if (report) {
     return (
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-4xl mx-auto space-y-12 pb-32">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/5 pb-12">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-foreground/[0.07] pb-12">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase overflow-hidden">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase overflow-hidden">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Audit Bundle Ready</span>
+              <span>Compliance Bundle Ready</span>
             </div>
-            <h2 className="text-4xl font-extrabold tracking-tight">Compliance Shield AI</h2>
-            <p className="text-white/40">Context-aware audit generated for your niche.</p>
+            <h2 className="text-4xl font-extrabold tracking-tight">ComplianceShield AI</h2>
+            <p className="text-foreground/40">AI-generated audit bundle for your specific niche.</p>
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={downloadPDF} disabled={isDownloading} className="px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center gap-2 disabled:opacity-50">
-              {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-              {isDownloading ? 'Logging Access...' : 'Download PDF'}
-            </button>
-            <button onClick={() => window.location.reload()} className="p-4 bg-white/5 text-white rounded-2xl hover:bg-white/10 border border-white/10 transition-all">
-              <RotateCcw className="w-5 h-5" />
-            </button>
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <a href="/dashboard" className="w-full md:w-auto px-6 py-4 bg-foreground/5 hover:bg-foreground/10 text-foreground border border-foreground/10 font-bold rounded-2xl transition-all text-center">
+              View Past Reports
+            </a>
+            <div className="flex items-center gap-2 w-full md:w-auto">
+              <button onClick={downloadPDF} disabled={isDownloading} className="flex-1 md:flex-none px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                {isDownloading ? 'Logging Access...' : 'Download PDF'}
+              </button>
+              <button onClick={() => window.location.reload()} className="p-4 bg-foreground/5 text-foreground rounded-2xl hover:bg-foreground/10 border border-foreground/10 transition-all" title="Start Over">
+                <RotateCcw className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
-        <div ref={reportRef} className="glass-card p-12 rounded-[2.5rem] prose prose-invert prose-emerald max-w-none bg-black">
+        <div ref={reportRef} className="glass-card p-10 rounded-[2.5rem] prose prose-emerald dark:prose-invert max-w-none">
           <ReactMarkdown>{report}</ReactMarkdown>
         </div>
       </motion.div>

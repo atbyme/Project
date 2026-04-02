@@ -1,12 +1,12 @@
 'use server';
 
 import { headers } from 'next/headers';
-import fs from 'fs/promises';
-import path from 'path';
+import { createClient } from '@/lib/server';
 
 /**
  * Log Report Download (The Security Audit Log)
- * Captures device history and IP for buyer confidence.
+ * Captures device history, IP, and user identity for full traceability.
+ * Backed by Supabase audit_logs table with RLS.
  */
 export async function logReportDownload(reportTitle: string) {
   try {
@@ -14,41 +14,33 @@ export async function logReportDownload(reportTitle: string) {
     const userAgent = headersList.get('user-agent') || 'Unknown Device';
     const forwardedFor = headersList.get('x-forwarded-for');
     const ip = forwardedFor ? forwardedFor.split(',')[0] : 'localhost';
-    
-    const timestamp = new Date().toISOString();
+
+    const supabase = await createClient();
+
+    // Get current user if logged in
+    const { data: { user } } = await supabase.auth.getUser();
+
     const logEntry = {
-      timestamp,
       action: 'PDF_DOWNLOAD',
       report: reportTitle,
       device: userAgent,
       ip_v4: ip,
-      status: 'SUCCESS'
+      status: 'SUCCESS',
+      user_id: user?.id ?? null,
     };
 
-    // [SERVERLESS-SAFE] Special handling for Vercel:
-    // Vercel does NOT allow permanent file writing. We log to console for 
-    // real-time monitoring and use /tmp for temporary session persistence.
-    const logPath = path.join('/tmp', 'audit-log.json');
-    
-    let currentLogs = [];
-    try {
-      const data = await fs.readFile(logPath, 'utf8');
-      currentLogs = JSON.parse(data);
-    } catch (e) {
-      // File doesn't exist yet or is inaccessible
+    console.log(`[AUDIT-LOG] ${ip} | ${user?.email || 'anon'} | ${reportTitle}`);
+
+    const { error } = await supabase
+      .from('audit_logs')
+      .insert([logEntry]);
+
+    if (error) {
+      console.error('Supabase Audit Log Error:', JSON.stringify(error, null, 2));
+      // Graceful fallback — don't block the download
+      return { success: true, log: logEntry };
     }
 
-    currentLogs.push(logEntry);
-    
-    // Attempt to write for the session (might not persist cross-restarts on Vercel)
-    try {
-      await fs.writeFile(logPath, JSON.stringify(currentLogs, null, 2));
-    } catch (e) {
-      // Silent fail for file-system restricted environments
-    }
-
-    console.log(`[AUDIT-LOG] ${ip} | ${userAgent} | ${reportTitle}`);
-    
     return { success: true, log: logEntry };
   } catch (error) {
     console.error('Audit Log Error:', error);

@@ -1,95 +1,141 @@
 'use server';
 
-/**
- * AI CLIENT (CORE ENGINE)
- * [ARCHITECT NOTE]: We use OpenRouter here to give the buyer "Model Agnostic" 
- * freedom—this prevents vendor lock-in and is a huge selling point.
- * We've also added Zod validation to ensure the AI never receives malicious data.
- */
-
 import { callOpenRouter, ComplianceSchema, type ComplianceData } from '@/lib/ai-client';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { checkBotScore } from '@/lib/bot-protection';
 import { headers } from 'next/headers';
-
-
+import { createClient } from '@/lib/server';
 
 export async function generateComplianceReport(rawAnswers: any) {
   try {
-    // 0. Security: Bot Protection
+    // ── 0a. Bot Protection ────────────────────────────────────────────────
     const botCheck = await checkBotScore();
-    if (botCheck.isBot) throw new Error("Bot access denied.");
+    if (botCheck.isBot) {
+      return { success: false, error: 'Access denied: automated request detected.' };
+    }
 
-    // 0. Security: Rate Limit Check (5 Requests per Hour)
+    // ── 0b. IP Rate Limiting (5 reports per hour) ─────────────────────────
     const headersList = await headers();
     const forwardedFor = headersList.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0] : 'localhost';
-    
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'localhost';
+
     const limitStatus = await checkRateLimit(ip);
     if (!limitStatus.success) {
-      return { 
-        success: false, 
-        error: 'Security Alert: You have reached the hourly limit (5 reports). Please try again in 1 hour or upgrade to PRO.' 
+      return {
+        success: false,
+        error: 'Security limit reached: You can generate up to 5 reports per hour. Please try again shortly, or upgrade to PRO for unlimited access.',
       };
     }
 
-    // 1. Advanced Input Validation (Buyer Security Check)
-    console.log('Validating data schema via Zod...');
+    // ── 1. Input Validation (Zod) ─────────────────────────────────────────
     const result = ComplianceSchema.safeParse(rawAnswers);
     if (!result.success) {
-      return { success: false, error: 'Invalid data provided for compliance generation.' };
+      return { success: false, error: 'Invalid data provided. Please complete the questionnaire.' };
     }
     const answers = result.data;
 
-    // 2. Phase 1: The "Architect" Step (Generating a Master Prompt)
-    console.time('AI_Architect_Step');
-    console.log('AI Architect: Building specialize legal instructions...');
-    
-    // [HUMAN TOUCH]: Adding a randomized structural seed to ensure uniqueness.
-    const seed = Math.random().toString(36).substring(7);
+    const industry      = answers.industry      || 'General Business';
+    const dataTypes     = answers.data_types?.join(', ') || 'personal data';
+    const companySize   = answers.company_size   || 'small';
+    const jurisdiction  = answers.jurisdiction   || 'Global / International';
+    const seed          = Math.random().toString(36).substring(2, 9);
 
+    // ── 2. Phase 1 — "The Architect" (fast free model) ───────────────────
     const architectPrompt = `
-      You are a Senior Legal Partner. [Ref: ${seed}]
-      User context: ${JSON.stringify(answers)}
+You are a Senior Legal Partner at a world-class compliance firm. [Session: ${seed}]
 
-      Write a CONCISE (100 words max) "Persona & Instructions" for a legal writer AI. 
-      INSTRUCTIONS:
-      1. Start with a "Table of Contents" (Linkable).
-      2. Style: Warm, Authoritative, Supportive.
-      3. Focus: Gaps for ${answers.data_types?.join(', ') || 'personal data'}.
-      4. Signature: "Certified by ComplianceShield Logic [A-2026]".
-      
-      Only return the instructions. No intro.
-    `;
+A client has provided this profile:
+${JSON.stringify(answers, null, 2)}
 
-    // Use a fast model for the Architect step
-    const masterPrompt = await callOpenRouter(architectPrompt, 'openai/gpt-4o-mini', 300);
-    console.timeEnd('AI_Architect_Step');
-    if (!masterPrompt) throw new Error('AI Architect failed.');
+Your task: Write a precise, 120-word "Master Brief" for a legal AI writer. Include:
+1. A markdown Table of Contents with 7 sections (Executive Summary, Regulatory Scope, Data Classification, Risk Assessment, Compliance Controls, Implementation Timeline, Certification Checklist)
+2. Tone: Authoritative, warm, client-focused
+3. Focus areas: ${dataTypes} in the ${industry} sector
+4. Jurisdiction: ${jurisdiction}
+5. End with: "Certified by ComplianceShield AI Engine [v2026-${seed}]"
 
-    // 3. Phase 2: The "Expert Writer" Step (Executing the Master Prompt)
-    console.time('AI_Writer_Step');
-    console.log('AI Expert: Synthesizing the final compliance bundle...');
-    const finalReport = await callOpenRouter(masterPrompt, 'openai/gpt-4o-mini', 2000);
-    console.timeEnd('AI_Writer_Step');
+Return ONLY the brief. No preamble.
+    `.trim();
 
-    return { 
-      success: true, 
+    const masterPrompt = await callOpenRouter(architectPrompt, 'google/gemma-2-9b-it:free', 400);
+    if (!masterPrompt) throw new Error('AI Architect step failed to respond.');
+
+    // ── 3. Phase 2 — "The Expert Writer" ─────────────────────────────────
+    const writerPrompt = `
+${masterPrompt}
+
+---
+
+Now write the FULL compliance report for this client profile:
+- Industry: ${industry}
+- Company Size: ${companySize}
+- Data Types Handled: ${dataTypes}
+- Jurisdiction: ${jurisdiction}
+- Additional Context: ${JSON.stringify(answers)}
+
+FORMAT REQUIREMENTS (follow exactly):
+# ComplianceShield AI — ${industry} Compliance Bundle
+**Generated:** ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} | **Reference:** CS-${seed.toUpperCase()}
+
+---
+
+## 📋 Table of Contents
+| # | Section | Page |
+|---|---------|------|
+| 1 | Executive Summary | 2 |
+| 2 | Regulatory Scope & Applicable Laws | 3 |
+| 3 | Data Classification Framework | 4 |
+| 4 | Risk Assessment Matrix | 5 |
+| 5 | Compliance Controls & Policies | 6 |
+| 6 | Implementation Timeline | 8 |
+| 7 | Certification Checklist | 9 |
+
+---
+
+Then write each section in full detail (minimum 150 words per section). Use markdown headers, bullet points, and tables. Be specific to the ${industry} industry. Include real regulation names (GDPR Article numbers, HIPAA §§, CCPA references where applicable).
+
+End with:
+---
+*This document was generated by ComplianceShield AI on ${new Date().toISOString().split('T')[0]}. Reference: CS-${seed.toUpperCase()}. Certified by ComplianceShield AI Engine [v2026-A]. This report is provided for informational purposes and should be reviewed by a qualified legal professional for your specific jurisdiction.*
+    `.trim();
+
+    const finalReport = await callOpenRouter(writerPrompt, 'google/gemma-2-9b-it:free', 3000);
+    if (!finalReport) throw new Error('AI Writer step failed to produce a report.');
+
+    // ── 4. Persist to Supabase ────────────────────────────────────────────
+    const supabase = await createClient();
+    const userAgent = headersList.get('user-agent') || 'Unknown';
+    const { data: { user } } = await supabase.auth.getUser();
+
+    const { error: dbError } = await supabase.from('compliance_reports').insert([{
+      report_content: finalReport,
+      ip_address:     ip,
+      user_agent:     userAgent,
+      industry:       industry,
+      user_id:        user?.id ?? null,
+    }]);
+
+    if (dbError) {
+      // Log but don't fail — the report was generated successfully
+      console.error('DB Insert Error (non-fatal):', JSON.stringify(dbError, null, 2));
+    }
+
+    return {
+      success: true,
       data: finalReport,
       meta: {
-        model: 'openrouter/free (2-Step AI)',
-        architected: true,
-        secure: true
-      }
+        model:      'ComplianceShield AI Engine (2-Step)',
+        reference:  `CS-${seed.toUpperCase()}`,
+        industry,
+        secure:     true,
+      },
     };
+
   } catch (error: any) {
     console.error('Compliance Engine Error:', error);
-    
-    // Security check: Don't leak technical error details to the frontend
-    const uiError = error.message?.includes('429') 
-      ? 'Servers are temporarily busy. Retrying in background...' 
-      : 'Generation failed. Security system blocked a malformed response.';
-      
-    return { success: false, error: uiError };
+    return {
+      success: false,
+      error: `Generation failed: ${error.message || 'Unexpected error. Please try again.'}`,
+    };
   }
 }

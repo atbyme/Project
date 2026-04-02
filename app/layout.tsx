@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,14 +14,16 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'ComplianceShield AI | 2026 Legal Bundles',
-  description: 'Automated GDPR & HIPAA Compliance for SaaS and Startups. Built for the 2026 legal landscape.',
-  metadataBase: new URL('https://complianceshield.ai'),
-  alternates: {
-    canonical: '/',
-  },
-  icons: {
-    icon: '/favicon.ico',
+  title: "ComplianceShield AI | GDPR & HIPAA Compliance in Minutes",
+  description:
+    "Generate enterprise-grade GDPR & HIPAA compliance bundles in under 5 minutes. Powered by AI. Built for startups, law clinics, and modern firms.",
+  metadataBase: new URL("https://complianceshield.ai"),
+  alternates: { canonical: "/" },
+  icons: { icon: "/favicon.ico" },
+  openGraph: {
+    title: "ComplianceShield AI",
+    description: "Stop paying $3,000 for legal compliance. Generate your bundle today.",
+    type: "website",
   },
 };
 
@@ -35,7 +38,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
