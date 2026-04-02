@@ -1,10 +1,14 @@
-import React from 'react';
 import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText, Sparkles } from 'lucide-react';
-
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { createClient } from '@/lib/server';
+import React from 'react';
 
-export default function LandingPage() {
+
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-emerald-500/30 selection:text-emerald-700 dark:selection:text-emerald-300">
       {/* Glow background mesh */}
@@ -17,24 +21,25 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-[0_0_14px_rgba(16,185,129,0.35)]">
               <Shield className="w-4 h-4 text-black" />
             </div>
-            <span className="text-xl font-bold tracking-tight">
+            <span className="text-xl font-bold tracking-tight text-foreground">
               ComplianceShield <span className="text-emerald-500">AI</span>
             </span>
           </div>
           <div className="flex items-center gap-6 text-sm text-foreground/50">
             <a href="#how"     className="hidden md:block hover:text-foreground transition-colors">How it works</a>
             <a href="#pricing" className="hidden md:block hover:text-foreground transition-colors">Pricing</a>
-            <Link href="/dashboard" className="hidden md:block hover:text-emerald-500 transition-colors font-medium">Dashboard</Link>
+            {user && <Link href="/dashboard" className="hidden md:block hover:text-emerald-500 transition-colors font-medium">Archive</Link>}
             <ThemeToggle />
             <Link
-              href="/login"
+              href={user ? "/dashboard" : "/login"}
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all text-sm shadow-[0_0_12px_rgba(16,185,129,0.25)]"
             >
-              Sign In
+              {user ? 'Go to Dashboard' : 'Sign In'}
             </Link>
           </div>
         </div>
       </nav>
+
 
       <main className="relative z-10">
         {/* Hero */}

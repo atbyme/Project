@@ -12,8 +12,12 @@ export async function generateProfessionalPDF(
     element.classList.add('bg-white', 'text-black', 'p-10');
     element.classList.remove('prose-invert', 'glass-card', 'bg-background');
 
-    // 2. High-DPI Capture
+    // 2. High-DPI Capture with stabilization delay
+    // We wait 150ms to ensure the browser has applied the 'prose-slate' styles to the mirror
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     const canvas = await html2canvas(element, {
+
       scale: 2, 
       useCORS: true,
       logging: false,
