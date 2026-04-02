@@ -9,8 +9,8 @@ import ReactMarkdown from 'react-markdown';
 import { generateComplianceReport } from '@/app/actions/generateCompliance';
 import { logReportDownload } from '@/app/actions/audit';
 import { generateNextQuestion } from '@/app/actions/questions';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { generateProfessionalPDF } from '@/lib/pdf-engine';
+
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -107,63 +107,12 @@ export default function ComplianceWizard() {
     setIsDownloading(true);
     
     try {
-      // 1. Audit Log 
       await logReportDownload("Shield AI Audit Bundle");
       
-      // 2. Multi-page High-Fidelity Engine
-      const element = reportRef.current;
-      
-      // Force light-mode styles for the capture
-      element.classList.add('bg-white', 'text-black', 'p-8');
-      element.classList.remove('prose-invert', 'glass-card');
-
-      const canvas = await html2canvas(element, {
-        scale: 2, 
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: 1200,
-      });
-
-      // Cleanup styles immediately after capture
-      element.classList.remove('bg-white', 'text-black', 'p-8');
-      element.classList.add('prose-invert', 'glass-card');
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = pdfWidth / imgWidth;
-      const canvasPageHeight = pdfHeight / ratio;
-      
-      let heightLeft = imgHeight;
-      let position = 0;
-      let pageCount = 0;
-
-      while (heightLeft > 0) {
-        if (pageCount > 0) pdf.addPage();
-        
-        // Add only the part of the image that fits on the current page
-        pdf.addImage(
-          imgData, 
-          'PNG', 
-          0, 
-          -position * ratio, 
-          pdfWidth, 
-          imgHeight * ratio
-        );
-        
-        heightLeft -= canvasPageHeight;
-        position += canvasPageHeight;
-        pageCount++;
-      }
-
       const industryName = answers.industry || 'Compliance';
-      pdf.save(`ComplianceShield_${industryName.replace(/\s+/g, '_')}_Report.pdf`);
-
+      const fileName = `ComplianceShield_${industryName.replace(/\s+/g, '_')}_Report.pdf`;
+      
+      await generateProfessionalPDF(reportRef.current, fileName);
 
     } catch (err) {
       console.error('Download failed:', err);
@@ -172,6 +121,7 @@ export default function ComplianceWizard() {
       setIsDownloading(false);
     }
   };
+
 
 
 

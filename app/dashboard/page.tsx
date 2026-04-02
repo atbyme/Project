@@ -199,12 +199,16 @@ export default async function DashboardPage() {
                   </div>
 
                   {/* Preview snippet */}
-                  <div className="relative rounded-xl bg-foreground/[0.03] border border-foreground/[0.06] p-5 overflow-hidden max-h-28">
-                    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background/80 to-transparent z-10" />
-                    <p className="text-sm text-foreground/50 leading-relaxed line-clamp-4 font-mono">
-                      {report.report_content?.replace(/[#*>\-`]/g, '').slice(0, 300)}…
-                    </p>
+                  <div className="relative rounded-2xl bg-foreground/[0.02] border border-foreground/[0.05] p-6 overflow-hidden max-h-32 group-hover:bg-foreground/[0.04] transition-colors">
+                    <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-background/90 to-transparent z-10" />
+                    <div className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
+                      <p className="text-sm text-foreground/60 leading-relaxed line-clamp-3">
+                        {report.report_content?.replace(/[#*>\-`]/g, '').slice(0, 350)}…
+                      </p>
+                    </div>
                   </div>
+
 
                   {/* Actions — client component */}
                   <ReportCardActions
