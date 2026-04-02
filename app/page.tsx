@@ -40,10 +40,11 @@ export default function LandingPage() {
         {/* Hero */}
         <section className="px-6 pt-32 pb-24 text-center">
           <div className="max-w-4xl mx-auto space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm font-medium animate-fade-in">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold animate-fade-in">
               <Zap className="w-3.5 h-3.5" />
               <span>Next-Gen Compliance for 2026</span>
             </div>
+
             <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight bg-gradient-to-b from-foreground to-foreground/50 bg-clip-text text-transparent">
               Stop paying $3,000 <br />for compliance.
             </h1>
@@ -75,9 +76,10 @@ export default function LandingPage() {
         {/* Social Proof */}
         <section className="px-6 py-12 border-y border-foreground/[0.06] bg-foreground/[0.015]">
           <div className="max-w-7xl mx-auto">
-            <p className="text-center text-xs font-bold text-foreground/25 uppercase tracking-widest mb-8">
+            <p className="text-center text-xs font-bold text-foreground/40 dark:text-foreground/25 uppercase tracking-widest mb-8">
               Trusted by 500+ law clinics and accounting startups
             </p>
+
             <div className="flex flex-wrap justify-center gap-x-16 gap-y-6 opacity-30">
               {['ACME LEGAL', 'MEDIX', 'DUE DILIGENCE', 'SECURELY', 'SHIELD LAW'].map((name) => (
                 <span key={name} className="text-xl font-bold tracking-tighter cursor-default hover:opacity-70 transition-opacity">{name}</span>

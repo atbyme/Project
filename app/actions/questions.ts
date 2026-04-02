@@ -46,7 +46,8 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
       Do not include any other text or markdown.
     `;
 
-    const response = await callOpenRouter(prompt, 'openai/gpt-4o-mini', 800);
+    const response = await callOpenRouter(prompt, 'google/gemini-2.0-flash-exp:free', 400); // Faster, low-latency model
+
     // Extract only the JSON object, ignoring conversational text
     const match = response.match(/\{[\s\S]*\}/);
     if (!match) throw new Error("Could not parse JSON from AI response.");

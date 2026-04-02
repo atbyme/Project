@@ -223,13 +223,14 @@ export default function ComplianceWizard() {
         </div>
         <div className="space-y-4 max-w-sm">
           <h2 className="text-4xl font-bold">{isThinking ? 'Consulting...' : 'Expertly Building...'}</h2>
-          <p className="text-white/40 leading-relaxed">
+          <p className="text-foreground/40 leading-relaxed">
             {isThinking ? 'We are analyzing your niche to provide the most relevant next step.' : 'Your Senior Legal Partner is synthesizing your 2026 Table of Contents...'}
           </p>
         </div>
-        <div className="w-64 h-1.5 bg-white/5 rounded-full overflow-hidden">
+        <div className="w-64 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
           <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 5, repeat: Infinity }} />
         </div>
+
       </div>
     );
   }
@@ -239,14 +240,15 @@ export default function ComplianceWizard() {
   return (
     <div className="max-w-3xl mx-auto space-y-12">
       <div className="space-y-4">
-        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-white/30">
+        <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-foreground/30">
           <span>{currentStep + 1} of 10 Dynamic Steps</span>
           <span>{Math.round(progress)}% Complete</span>
         </div>
-        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+        <div className="h-1 bg-foreground/5 rounded-full overflow-hidden">
           <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
         </div>
       </div>
+
 
       <AnimatePresence mode="wait">
         <motion.div key={currentStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
