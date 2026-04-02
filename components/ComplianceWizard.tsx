@@ -48,10 +48,13 @@ export default function ComplianceWizard() {
     // 2. Check login status for Trial Mode UI
     import('@/lib/client').then(mod => {
       const supabase = mod.createClient();
-      supabase.auth.getUser().then(({ data }) => {
-        setIsTrial(!data.user);
-      });
+      if (supabase.auth) {
+        supabase.auth.getUser().then((res: any) => {
+          setIsTrial(!res.data?.user);
+        });
+      }
     });
+
   }, []);
 
 
