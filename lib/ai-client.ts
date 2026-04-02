@@ -14,17 +14,18 @@ export const ComplianceSchema = z.any();
 export type ComplianceData = z.infer<typeof ComplianceSchema>;
 
 const FALLBACK_MODELS = [
-  "google/gemini-2.0-flash-exp:free", // Highest Priority (Boardroom Grade)
-  "google/gemini-flash-1.5-8b:free",  // Ultra-Fast Synthesis
-  "qwen/qwen-2.5-72b-instruct:free",  // Elite Logic
-  "deepseek/deepseek-r1:free",        // Deep Reasoning Failover
+  "google/gemini-flash-1.5-8b:free",  // Fastest Synth Cycle
+  "meta-llama/llama-3.2-3b-instruct:free", // Lightning Fast Failover
+  "google/gemini-2.0-flash-exp:free", // High Quality + Speed
+  "qwen/qwen-2.5-72b-instruct:free",  // Deep Logic (Slower)
   "meta-llama/llama-3.1-8b-instruct:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
   "mistralai/mistral-7b-instruct:free", 
+  "deepseek/deepseek-r1:free",        // Deep Reasoning
   "nvidia/llama-3.1-nemotron-70b-instruct:free",
   "microsoft/phi-3-medium-128k-instruct:free",
   "openrouter/free" // Final safety net
 ];
+
 
 
 
@@ -41,7 +42,8 @@ export async function callOpenRouter(prompt: string, model: string = "openrouter
       console.log(`[AI-DIAGNOSTIC] Trying model: ${currentModel}`);
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s Hard Timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Hard Speed Cycle
+
 
 
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {

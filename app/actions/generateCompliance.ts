@@ -70,6 +70,8 @@ export async function generateComplianceReport(rawAnswers: any) {
     const unifiedPrompt = `
       ROLE: You are the Senior Legal Partner at a global elite compliance firm.
       CONSTRAINTS: 15-Second Generation Window. High Quality. Brief & Powerful sections.
+      MAX LENGTH: 600 words for the entire document. Do not ramble.
+
       CLIENT DATA (Dynamic Audit Selections):
       ${selections}
       
