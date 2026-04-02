@@ -112,30 +112,35 @@ export default function ComplianceWizard() {
       
       // 2. Direct-to-file Download (Professional PDF Engine)
       const element = reportRef.current;
+      
+      // High-quality capture
       const canvas = await html2canvas(element, {
-        scale: 2, // Better resolution
+        scale: 2, 
         useCORS: true,
         logging: false,
-        backgroundColor: '#0a0a0a' // Matches dark mode
+        backgroundColor: '#ffffff', // Force white background for professional document look
+        windowWidth: 1200, // Ensure desktop-like layout in PDF
       });
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgProps = pdf.getImageProperties(imgData);
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`ComplianceShieldAI_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+      const industryName = answers.industry || 'Compliance';
+      pdf.save(`ComplianceShield_${industryName.replace(/\s+/g, '_')}_Report.pdf`);
+
 
     } catch (err) {
       console.error('Download failed:', err);
-      // Fallback for extreme cases
+      // Fallback
       window.print();
     } finally {
       setIsDownloading(false);
     }
   };
+
 
 
   if (report) {
