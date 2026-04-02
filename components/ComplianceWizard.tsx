@@ -28,8 +28,10 @@ const INITIAL_QUESTION = {
 
 export default function ComplianceWizard() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [questionHistory, setQuestionHistory] = useState<any[]>([INITIAL_QUESTION]);
   const [currentQuestion, setCurrentQuestion] = useState<any>(INITIAL_QUESTION);
   const [answers, setAnswers] = useState<Record<string, any>>({});
+
   const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [report, setReport] = useState<string | null>(null);
@@ -65,12 +67,22 @@ export default function ComplianceWizard() {
 
   const next = async () => {
     if (currentStep < 9) { // We want 10 questions total
+      // 1. If we are moving forward but already have the NEXT question in history, just use it
+      if (currentStep + 1 < questionHistory.length) {
+        setCurrentQuestion(questionHistory[currentStep + 1]);
+        setCurrentStep(prev => prev + 1);
+        return;
+      }
+
+      // 2. Otherwise, fetch a NEW unique question from the AI
       setIsThinking(true);
       setError(null);
       try {
         const result = await generateNextQuestion(answers, currentStep + 1);
         if (result.success) {
-          setCurrentQuestion(result.data);
+          const newQuestion = result.data;
+          setQuestionHistory(prev => [...prev, newQuestion]);
+          setCurrentQuestion(newQuestion);
           setCurrentStep(currentStep + 1);
         } else {
           throw new Error("AI failed to generate next step.");
@@ -84,6 +96,16 @@ export default function ComplianceWizard() {
       generateReport();
     }
   };
+
+  const previous = () => {
+    if (currentStep > 0) {
+      const prevStep = currentStep - 1;
+      setCurrentQuestion(questionHistory[prevStep]);
+      setCurrentStep(prevStep);
+      setError(null);
+    }
+  };
+
 
   const generateReport = async () => {
     setIsGenerating(true);
@@ -241,11 +263,22 @@ export default function ComplianceWizard() {
           {isThinking ? <Sparkles className="w-32 h-32 text-emerald-500 relative z-10 animate-pulse" /> : <Shield className="w-32 h-32 text-emerald-500 relative z-10" />}
         </div>
         <div className="space-y-4 max-w-sm px-6">
-          <h2 className="text-4xl font-bold text-foreground">{isThinking ? 'Consulting...' : 'Expertly Building...'}</h2>
-          <p className="text-foreground/40 leading-relaxed font-medium">
-            {isThinking ? 'We are analyzing your specific industry context to provide the most relevant next step.' : 'Your Senior Legal Partner is synthesizing your 2026 Table of Contents...'}
+          <h2 className="text-4xl font-bold text-foreground">
+            {isThinking ? (
+              currentStep === 0 ? "Analyzing Industry..." :
+              currentStep < 5 ? "Contextualizing Audit..." :
+              "Synthesizing Strategy..."
+            ) : "Generating Report..."}
+          </h2>
+          <p className="text-foreground/40 leading-relaxed font-medium capitalize">
+            {isThinking ? (
+              currentStep === 0 ? "Identifying sector-specific risk profiles." :
+              currentStep < 5 ? "Referencing previous responses for depth." :
+              "Finalizing regulatory cross-references."
+            ) : "Your Senior Legal Partner is creating your audit bundle."}
           </p>
         </div>
+
 
         <div className="w-64 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
           <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 5, repeat: Infinity }} />
@@ -325,17 +358,30 @@ export default function ComplianceWizard() {
 
       {error && <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium">{error}</div>}
 
-      <div className="flex items-center justify-end pt-12 border-t border-foreground/5">
-
-        <button
-          onClick={next}
-          disabled={!answers[currentQuestion.id] || isThinking}
-          className="px-10 py-5 bg-emerald-500 text-black font-extrabold rounded-2xl hover:bg-emerald-400 disabled:opacity-30 flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
-        >
-          {currentStep === 9 ? 'Generate Table of Contents & Report' : 'Continue'}
-          <ChevronRight className="w-5 h-5" />
-        </button>
+      <div className="flex items-center justify-between pt-12 border-t border-foreground/5">
+        {currentStep > 0 && (
+          <button
+            onClick={previous}
+            disabled={isThinking}
+            className="px-8 py-5 border-2 border-foreground/5 hover:border-foreground/10 text-foreground/40 hover:text-foreground font-bold rounded-2xl transition-all flex items-center gap-2 group"
+          >
+            <ChevronLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+            Previous
+          </button>
+        )}
+        
+        <div className={cn("ml-auto", currentStep === 0 && "w-full flex justify-end")}>
+          <button
+            onClick={next}
+            disabled={!answers[currentQuestion.id] || isThinking}
+            className="px-10 py-5 bg-emerald-500 text-black font-extrabold rounded-2xl hover:bg-emerald-400 disabled:opacity-30 flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
+          >
+            {currentStep === 9 ? 'Generate Report' : 'Continue'}
+            <ChevronRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+          </button>
+        </div>
       </div>
+
     </div>
   );
 }

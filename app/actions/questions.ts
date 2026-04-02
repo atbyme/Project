@@ -33,25 +33,25 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
 
       OBJECTIVE: Generate the NEXT logical question for Step ${stepCount + 1} of 10.
       
-      RULES for UNIQUNESS:
-      1. CRITICAL: NEVER repeat a topic or domain already covered in the HISTORY. 
-      2. CRITICAL: If the user chose a specific industry, your questions MUST be specialized for that sector (e.g., if Finance, ask about PCI-DSS/SOX; if Health, ask about HIPAA/HITECH).
-      3. CRITICAL: Avoid generic "Yes/No" questions. Force the user to choose between high-value operational strategies.
-      4. STYLE: Use authoritative, boardroom-level language.
+      RULES for UNIQUNESS & SPEED:
+      1. CRITICAL: NEVER repeat a topic already covered. 
+      2. CRITICAL: If the user chose a specific industry, specialize immediately.
+      3. CRITICAL: TITLE must be under 12 words. DESCRIPTION must be under 20 words.
+      4. STYLE: Authoritative, boardroom-level language.
 
       OUTPUT FORMAT (JSON ONLY):
       {
-        "id": "dynamic_step_${stepCount}",
-        "title": "Professional question here?",
-        "description": "Expert reasoning for this audit point.",
-        "options": ["High-Value Option A", "High-Value Option B", "Option C", "Option D"]
+        "id": "dynamic_step_${stepCount}_${Math.random().toString(36).substring(7)}",
+        "title": "Short Professional Question?",
+        "description": "Expert reasoning (brief).",
+        "options": ["Option A", "Option B", "Option C", "Option D"]
       }
 
-      Return ONLY the JSON. No preamble.
+      Return ONLY the JSON.
     `;
 
+
     const response = await callOpenRouter(prompt, 'google/gemini-2.0-flash-exp:free', 500); 
-// Faster, low-latency model
 
     // Extract only the JSON object, ignoring conversational text
     const match = response.match(/\{[\s\S]*\}/);
@@ -62,15 +62,31 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
     return { success: true, data: question };
   } catch (error: any) {
     console.error('Dynamic Question Error:', error);
-    // Fallback question if AI fails
+    
+    // ── SMART FALLBACK BANK ──────────────────────────────────────────────
+    // If AI fails, we pick a relevant expert question based on the step count
+    // to ensure the user never sees repetitive "filler" data.
+    const fallbackBank: Record<number, any> = {
+      1: { title: "How do you classify sensitive data?", description: "Data classification is a core part of security policy.", options: ["Strictly Confidential", "Internal Only", "Public", "Not classified"] },
+      2: { title: "Which encryption standard is currently in use?", description: "Encryption at rest is a standard legal requirement.", options: ["AES-256 (Military Grade)", "Standard TLS", "Legacy WEP", "None / Plaintext"] },
+      3: { title: "What is your Incident Response timeframe?", description: "Articles define specific breach notification windows.", options: ["Under 2 hours", "Within 24 hours", "Under 72 hours (GDPR Standard)", "Best effort"] },
+      4: { title: "How are access logs reviewed?", description: "Audit trails are critical for forensic compliance.", options: ["Daily Automated", "Weekly Manual", "On-demand only", "No logging"] },
+      5: { title: "Where is your primary data center located?", description: "Jurisdiction affects data residency laws.", options: ["European Union (GDPR Zone)", "United States", "Multi-region Global", "Local On-premise"] },
+      6: { title: "Who has administrative access to databases?", description: "Principle of Least Privilege is a core audit point.", options: ["Designated Security Admins", "All Engineering staff", "Third-party vendors", "Shared root access"] },
+      7: { title: "How often are vulnerability scans performed?", description: "Proactive security is a baseline requirement.", options: ["Continuous Real-time", "Weekly Scheduled", "Quarterly Audit", "Annually / Never"] },
+      8: { title: "Is your staff trained on Phishing & Social Engineering?", description: "Human factors are the #1 compliance risk.", options: ["Yes (Quarterly Training)", "Annually", "Onboarding only", "No formal training"] },
+      9: { title: "Are backups stored in an immutable environment?", description: "Ransomware protection for compliance integrity.", options: ["Yes (WORM / Immutable)", "Standard Cloud Backup", "Local Tape / NAS", "No backup policy"] },
+    };
+
+    const fallback = fallbackBank[stepCount] || fallbackBank[1];
+
     return { 
       success: true, 
       data: {
         id: `fallback_${stepCount}`,
-        title: "How do you classify sensitive data?",
-        description: "Data classification is a core part of security policy.",
-        options: ["Strictly Confidential", "Internal Only", "Public", "Not classified"]
+        ...fallback
       }
     };
   }
 }
+
