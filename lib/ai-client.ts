@@ -13,44 +13,56 @@ export const ComplianceSchema = z.any();
 
 export type ComplianceData = z.infer<typeof ComplianceSchema>;
 
-/**
- * OPENROUTER SECURITY CLIENT
- * [ARCHITECT NOTE]: Using x-title and http-referer allows us to 
- * professionalize our API footprint, preventing rate limits and 
- * showcasing the "ComplianceShield" brand.
- */
+const FALLBACK_MODELS = [
+  "google/gemini-2.0-flash-exp:free",
+  "google/gemini-flash-1.5-8b:free",
+  "mistralai/mistral-7b-instruct:free",
+  "microsoft/phi-3-mini-128k-instruct:free",
+  "openrouter/auto"
+];
+
 export async function callOpenRouter(prompt: string, model: string = "google/gemini-2.0-flash-exp:free", maxTokens: number = 2000) {
-
-
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY missing");
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${apiKey}`,
-      "HTTP-Referer": "https://complianceshield.ai", // Mock URL for professional look
-      "X-Title": "ComplianceShield AI MVP",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.6,
-      max_tokens: maxTokens,
-    }),
-  });
+  // Models to try in order (the requested one first)
+  const modelsToTry = [model, ...FALLBACK_MODELS.filter(m => m !== model)];
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(`OpenRouter Error: ${response.status} - ${JSON.stringify(errorBody)}`);
+  for (const currentModel of modelsToTry) {
+    try {
+      console.log(`[AI-ROUTING] Attempting: ${currentModel}`);
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "HTTP-Referer": "https://project-eight-orpin-33.vercel.app", 
+          "X-Title": "ComplianceShield AI",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: currentModel,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.6,
+          max_tokens: maxTokens,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.choices?.[0]?.message?.content) {
+          return data.choices[0].message.content;
+        }
+      }
+
+      const errorData = await response.json().catch(() => ({}));
+      console.warn(`[AI-ROUTING] ${currentModel} failed: ${response.status}`, errorData);
+    } catch (err: any) {
+      console.warn(`[AI-ROUTING] ${currentModel} error:`, err.message);
+      lastError = err;
+    }
   }
 
-  const data = await response.json();
-  return data.choices[0].message.content;
+  throw lastError || new Error("All AI endpoints failed. Check API Key/Balance.");
 }
+
