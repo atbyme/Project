@@ -52,14 +52,28 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${location.origin}/auth/callback` },
+        options: { 
+          redirectTo: `${location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        },
       });
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('provider is not enabled')) {
+          setError('Google Login is not enabled in the Supabase Dashboard. Please enable the Google provider in Authentication > Providers.');
+        } else {
+          throw error;
+        }
+      }
     } catch (err: any) {
+      console.error('Google Auth Error:', err);
       setError(err.message || 'Google Sign-In failed. Please try again.');
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col justify-center items-center p-6 selection:bg-emerald-500/30">
@@ -88,13 +102,14 @@ export default function LoginPage() {
             <Shield className="w-7 h-7 text-emerald-500" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isLogin ? 'Welcome back' : 'Create your account'}
+            {isLogin ? 'Welcome back' : 'Join the Firm'}
           </h1>
-          <p className="text-foreground/40 text-sm">
+          <p className="text-foreground/40 text-sm leading-relaxed max-w-[280px] mx-auto text-balance">
             {isLogin
-              ? 'Sign in to access your secure compliance vault.'
-              : 'Start generating compliant legal bundles today.'}
+              ? "Access your secure vault and continue your firm's compliance journey."
+              : 'Secure your first high-value legal bundle in under 5 minutes.'}
           </p>
+
         </div>
 
         {/* Google SSO */}

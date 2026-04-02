@@ -1,5 +1,6 @@
 import React from 'react';
-import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText } from 'lucide-react';
+import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText, Sparkles } from 'lucide-react';
+
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -48,7 +49,8 @@ export default function LandingPage() {
             </h1>
             <p className="text-xl text-foreground/40 max-w-2xl mx-auto leading-relaxed">
               Generate legally-formatted GDPR and HIPAA bundles in 5 minutes for the price of a coffee.
-              Designed for small firms that need enterprise security without the bureaucracy.
+              Designed with ❤️ for small firms that need enterprise security without the bureaucracy.
+
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link
@@ -59,12 +61,14 @@ export default function LandingPage() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
               <Link
-                href="/dashboard"
-                className="w-full sm:w-auto px-8 py-4 bg-foreground/5 text-foreground font-semibold rounded-xl hover:bg-foreground/10 border border-foreground/10 transition-all text-center"
+                href="/wizard?demo=true"
+                className="w-full sm:w-auto px-8 py-4 bg-foreground/5 text-foreground font-semibold rounded-xl hover:bg-foreground/10 border border-foreground/10 transition-all text-center flex items-center justify-center gap-2"
               >
-                View Dashboard
+                <Sparkles className="w-4 h-4 text-emerald-500" />
+                View Live Sample
               </Link>
             </div>
+
           </div>
         </section>
 
@@ -167,7 +171,8 @@ export default function LandingPage() {
       </main>
 
       <footer className="px-6 py-12 border-t border-foreground/[0.06] text-center text-foreground/25 text-sm">
-        <p>© 2026 ComplianceShield AI. Built for the modern firm.</p>
+        <p>© 2026 ComplianceShield AI. Built with ❤️ for the modern firm. Secure, AI-Driven, Human-Focused.</p>
+
       </footer>
     </div>
   );

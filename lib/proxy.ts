@@ -21,10 +21,13 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            // Remove maxAge to make them session cookies (clears on tab close)
+            const sessionOptions = { ...options, maxAge: undefined };
+            supabaseResponse.cookies.set(name, value, sessionOptions);
+          })
         },
+
       },
     }
   )
@@ -33,10 +36,12 @@ export async function updateSession(request: NextRequest) {
   // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
   // issues with users being randomly logged out.
 
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
+  // IMPORTANT: If you remove getUser() and you use server-side rendering
   // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims()
-  const user = data?.claims
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
 
   if (
     !user &&

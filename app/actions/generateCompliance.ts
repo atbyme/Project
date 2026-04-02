@@ -27,6 +27,27 @@ export async function generateComplianceReport(rawAnswers: any) {
       };
     }
 
+    // ── 0c. One-Time Trial Check (for unsigned users) ───────────────────────
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      const { data: existingTrial } = await supabase
+        .from('compliance_reports')
+        .select('id')
+        .eq('ip_address', ip)
+        .is('user_id', null)
+        .maybeSingle();
+
+      if (existingTrial) {
+        return {
+          success: false,
+          error: 'Trial limit reached: You have already generated one free report from this IP. Please sign in to generate more or access your dashboard.',
+        };
+      }
+    }
+
+
     // ── 1. Input Validation (Zod) ─────────────────────────────────────────
     const result = ComplianceSchema.safeParse(rawAnswers);
     if (!result.success) {
@@ -103,9 +124,7 @@ End with:
     if (!finalReport) throw new Error('AI Writer step failed to produce a report.');
 
     // ── 4. Persist to Supabase ────────────────────────────────────────────
-    const supabase = await createClient();
     const userAgent = headersList.get('user-agent') || 'Unknown';
-    const { data: { user } } = await supabase.auth.getUser();
 
     const { error: dbError } = await supabase.from('compliance_reports').insert([{
       report_content: finalReport,
@@ -114,6 +133,7 @@ End with:
       industry:       industry,
       user_id:        user?.id ?? null,
     }]);
+
 
     if (dbError) {
       // Log but don't fail — the report was generated successfully

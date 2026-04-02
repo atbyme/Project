@@ -12,8 +12,8 @@ This is a **fully production-ready SaaS template** built with the latest stack:
 | Feature | Details |
 |---------|---------|
 | 🤖 2-Step AI Engine | Architect → Expert Writer for higher quality output |
-| 🔐 Google OAuth | One-click sign-in, sessions stored in Supabase |
-| 🗄️ Supabase Database | Row Level Security — users only see their own data |
+| 🔐 Google OAuth | One-click sign-in, session-only for maximum security |
+| 🗄️ Supabase Database | Row Level Security — authenticated users only |
 | 🛡️ Bot Protection | API-level bot score check |
 | ⏱️ Rate Limiting | 5 reports/hour per IP (memory-based, upgradeable to Redis) |
 | 🌙 Dark / Light Mode | Full theme toggle across all pages |
@@ -54,9 +54,8 @@ OPENROUTER_API_KEY=sk-or-v1-YOUR_OPENROUTER_KEY_HERE
 Run these SQL files **in order** in your Supabase SQL Editor (Dashboard → SQL Editor):
 
 ```
-1. supabase_schema.sql     ← Creates tables
-2. supabase_phase_4.sql    ← Adds user_id columns
-3. supabase_phase_5.sql    ← Complete RLS security policies + indexes
+1. supabase_schema.sql     ← Creates base tables
+2. supabase_phase_4.sql    ← Production Hardening (Auth Required, No Anon)
 ```
 
 That's it — your database is live and locked down.
@@ -108,7 +107,7 @@ Open **[http://localhost:3000](http://localhost:3000)** — your app is live! �
 │   ├── ai-client.ts          ← OpenRouter API wrapper + Zod schema
 │   ├── client.ts             ← Supabase browser client
 │   ├── server.ts             ← Supabase server client
-│   ├── middleware.ts         ← Session refresh middleware
+│   ├── proxy.ts              ← Session refresh proxy
 │   ├── rate-limit.ts         ← IP-based rate limiting (5/hour)
 │   └── bot-protection.ts     ← Bot score check
 ├── supabase_schema.sql       ← Initial DB tables
@@ -122,7 +121,7 @@ Open **[http://localhost:3000](http://localhost:3000)** — your app is live! �
 
 ### Database Security (Supabase RLS)
 ```
-Anonymous users → Can INSERT reports (no login required to try)
+Anonymous users → No access (Login Required for production)
 Authenticated users → Can INSERT their OWN reports only (user_id = JWT uid)
 Authenticated users → Can SELECT their OWN reports only
 Authenticated users → Can DELETE their OWN reports only
