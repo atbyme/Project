@@ -17,7 +17,8 @@ export const metadata: Metadata = {
   title: "ComplianceShield AI | GDPR & HIPAA Compliance in Minutes",
   description:
     "Generate enterprise-grade GDPR & HIPAA compliance bundles in under 5 minutes. Powered by AI. Built for startups, law clinics, and modern firms.",
-  metadataBase: new URL("https://complianceshield.ai"),
+  metadataBase: new URL("https://project-eight-orpin-33.vercel.app"),
+
   alternates: { canonical: "/" },
   icons: { icon: "/favicon.ico" },
   openGraph: {

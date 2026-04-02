@@ -19,7 +19,8 @@ export type ComplianceData = z.infer<typeof ComplianceSchema>;
  * professionalize our API footprint, preventing rate limits and 
  * showcasing the "ComplianceShield" brand.
  */
-export async function callOpenRouter(prompt: string, model: string = "google/gemma-2-9b-it:free", maxTokens: number = 2000) {
+export async function callOpenRouter(prompt: string, model: string = "meta-llama/llama-3.1-8b-instruct:free", maxTokens: number = 2000) {
+
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error("OPENROUTER_API_KEY missing");
 
