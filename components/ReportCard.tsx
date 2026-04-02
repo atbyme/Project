@@ -1,19 +1,23 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { Download, Loader2, Eye, EyeOff, FileText, CheckCircle2, Trash2, X, AlertCircle } from 'lucide-react';
 
-import { Download, Loader2, Eye, EyeOff, FileText, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { logReportDownload } from '@/app/actions/audit';
 import { generateProfessionalPDF } from '@/lib/pdf-engine';
+import { deleteReport } from '@/app/actions/deleteReport';
 
 interface ReportCardActionsProps {
+  id?: string; // Optional report ID for deletion
   reportContent: string;
   industry: string;
 }
 
-export function ReportCardActions({ reportContent, industry }: ReportCardActionsProps) {
+export function ReportCardActions({ id, reportContent, industry }: ReportCardActionsProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const pdfSourceRef = useRef<HTMLDivElement>(null);
 
@@ -28,9 +32,22 @@ export function ReportCardActions({ reportContent, industry }: ReportCardActions
 
     } catch (err) {
       console.error('Download failed:', err);
-      window.print(); // Final emergency fallback
+      alert("PDF Gen Failed. Please try Chrome/Edge for best results.");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteReport(id);
+      if (!res.success) throw new Error(res.error);
+    } catch (err: any) {
+      alert(`Delete failed: ${err.message}`);
+      setIsDeleting(false);
+      setShowConfirm(false);
     }
   };
 
@@ -57,16 +74,48 @@ export function ReportCardActions({ reportContent, industry }: ReportCardActions
           {isExpanded ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           {isExpanded ? 'Collapse' : 'View Full Report'}
         </button>
+        
         <button
           onClick={handleDownload}
           disabled={isDownloading}
           className="flex-1 px-4 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 shadow-lg shadow-emerald-500/20"
         >
           {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-          {isDownloading ? 'Downloading...' : 'Download PDF'}
+          {isDownloading ? 'Downlaod' : 'PDF Download'}
         </button>
+
+        {id && (
+          <div className="relative group">
+            {showConfirm ? (
+              <div className="flex items-center gap-1 bg-red-500/10 border border-red-500/20 p-1 rounded-xl animate-fade-in">
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-3 py-2 bg-red-500 text-white rounded-lg text-xs font-bold hover:bg-red-600 transition-all disabled:opacity-50"
+                >
+                  {isDeleting ? '...' : 'Confirm'}
+                </button>
+                <button
+                  onClick={() => setShowConfirm(false)}
+                  className="p-2 text-foreground/40 hover:text-foreground transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowConfirm(true)}
+                className="p-3.5 bg-foreground/5 hover:bg-red-500/20 text-foreground/40 hover:text-red-500 border border-foreground/10 hover:border-red-500/20 rounded-xl transition-all"
+                title="Delete Report"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
 

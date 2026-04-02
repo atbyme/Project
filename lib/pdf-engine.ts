@@ -60,10 +60,10 @@ export async function generateProfessionalPDF(
     pdf.save(filename.endsWith('.pdf') ? filename : `${filename}.pdf`);
     return true;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Professional PDF Engine Failure:', error);
-    // Silent fallback to standard print if the engine crashes
-    window.print();
-    return false;
+    // Explicit digital-only error handling
+    throw new Error(`PDF generation failed: ${error.message || 'Unknown render error'}. Please try a modern browser like Chrome or Safari.`);
   }
 }
+

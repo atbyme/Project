@@ -212,9 +212,11 @@ export default async function DashboardPage() {
 
                   {/* Actions — client component */}
                   <ReportCardActions
+                    id={report.id}
                     reportContent={report.report_content}
                     industry={report.industry || 'Compliance'}
                   />
+
                 </div>
               );
             })}
