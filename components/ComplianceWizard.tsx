@@ -103,24 +103,40 @@ export default function ComplianceWizard() {
   };
 
   const downloadPDF = async () => {
-    if (isDownloading) return;
+    if (isDownloading || !reportRef.current) return;
     setIsDownloading(true);
+    
     try {
       // 1. Audit Log 
       await logReportDownload("Shield AI Audit Bundle");
       
-      // 2. Trigger native OS print dialog (Instant, High Quality PDF)
-      setTimeout(() => {
-         window.print();
-      }, 500);
+      // 2. Direct-to-file Download (Professional PDF Engine)
+      const element = reportRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2, // Better resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#0a0a0a' // Matches dark mode
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`ComplianceShieldAI_Report_${new Date().toISOString().split('T')[0]}.pdf`);
 
     } catch (err) {
       console.error('Download failed:', err);
-      alert('There was an issue generating the PDF.');
+      // Fallback for extreme cases
+      window.print();
     } finally {
       setIsDownloading(false);
     }
   };
+
 
   if (report) {
     const isDemo = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('demo') === 'true';
