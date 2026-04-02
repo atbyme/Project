@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { toPng } from 'html-to-image';
+import { toJpeg } from 'html-to-image';
 
 export async function generateProfessionalPDF(
   element: HTMLDivElement, 
@@ -15,11 +15,13 @@ export async function generateProfessionalPDF(
     // We wait 350ms for more robust CSS rendering on mobile browsers
     await new Promise(resolve => setTimeout(resolve, 350));
 
-    // 3. Modern PNG Capture (more stable than direct canvas)
-    const dataUrl = await toPng(element, {
-      pixelRatio: 2,
+    // 3. Modern JPEG Capture (Massive size reduction from PNG)
+    const dataUrl = await toJpeg(element, {
+      pixelRatio: 1.0, // Standard resolution for ultra-low file size (~500KB)
+      quality: 0.6,   // Optimized compression ratio
       backgroundColor: options.backgroundColor || '#ffffff',
       cacheBust: true,
+
       style: {
         visibility: 'visible',
       }
@@ -53,11 +55,13 @@ export async function generateProfessionalPDF(
       
       pdf.addImage(
         dataUrl, 
-        'PNG', 
+        'JPEG', // Correcting image format to match capture
         0, 
         -position * ratio, 
         pdfWidth, 
-        imgHeight * ratio
+        imgHeight * ratio,
+        undefined,
+        'FAST' // Performance optimization
       );
       
       heightLeft -= canvasPageHeight;
@@ -73,5 +77,6 @@ export async function generateProfessionalPDF(
     throw new Error(`PDF generation failed: ${error.message || 'Unknown render error'}. Please refresh and try again.`);
   }
 }
+
 
 

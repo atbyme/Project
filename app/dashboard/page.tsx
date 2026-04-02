@@ -8,12 +8,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { ReportCardActions } from '@/components/ReportCard';
 
 // ── Industry colour mapping ─────────────────────────────────────────────────
-const INDUSTRY_STYLES: Record<string, { bg: string; badge: string; dot: string }> = {
-  'Healthcare / Medical':           { bg: 'bg-blue-500/10',    badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',    dot: 'bg-blue-500'    },
-  'Software / SaaS':                { bg: 'bg-emerald-500/10', badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
-  'Legal / Professional Services':  { bg: 'bg-purple-500/10',  badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',  dot: 'bg-purple-500'  },
-  'Finance / Fintech':              { bg: 'bg-amber-500/10',   badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',   dot: 'bg-amber-500'   },
-  'E-commerce':                     { bg: 'bg-pink-500/10',    badge: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20',    dot: 'bg-pink-500'    },
+const INDUSTRY_STYLES: Record<string, { bg: string; badge: string; dot: string; color: string }> = {
+  'Healthcare / Medical':           { bg: 'bg-blue-500/10',    badge: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',    dot: 'bg-blue-500',    color: 'text-blue-500'    },
+  'Software / SaaS':                { bg: 'bg-emerald-500/10', badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500', color: 'text-emerald-500' },
+  'Legal / Professional Services':  { bg: 'bg-purple-500/10',  badge: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',  dot: 'bg-purple-500',  color: 'text-purple-500'  },
+  'Finance / Fintech':              { bg: 'bg-amber-500/10',   badge: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',   dot: 'bg-amber-500',   color: 'text-amber-500'   },
+  'E-commerce':                     { bg: 'bg-pink-500/10',    badge: 'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20',    dot: 'bg-pink-500',    color: 'text-pink-500'    },
 };
 
 function getIndustryStyle(industry: string) {
@@ -21,8 +21,10 @@ function getIndustryStyle(industry: string) {
     bg: 'bg-slate-500/10',
     badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
     dot: 'bg-slate-400',
+    color: 'text-slate-500',
   };
 }
+
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -147,7 +149,7 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        {/* ── Reports Grid ── */}
+        {/* ── Professional Reports Table ── */}
         {!reports || reports.length === 0 ? (
           <div className="text-center py-24 border-2 border-dashed border-foreground/10 rounded-3xl bg-foreground/[0.02]">
             <FileText className="w-14 h-14 text-foreground/20 mx-auto mb-4" />
@@ -162,66 +164,72 @@ export default async function DashboardPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {reports.map((report: any) => {
-
-              const style = getIndustryStyle(report.industry || 'Other');
-              return (
-                <div
-                  key={report.id}
-                  className="glass-card rounded-2xl p-6 md:p-8 space-y-6 hover:border-emerald-500/30 transition-all"
-                >
-                  {/* Card header */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold ${style.badge}`}>
-                        <span className={`w-2 h-2 rounded-full ${style.dot}`} />
-                        {report.industry || 'General'}
-                      </div>
-                      <h3 className="text-xl font-bold">
-                        {report.industry || 'General'} Compliance Bundle
-                      </h3>
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-foreground/40">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5" />
-                          {formatDate(report.created_at)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          AI-Verified
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Building2 className="w-3.5 h-3.5" />
-                          {getDeviceName(report.user_agent)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Preview snippet */}
-                  <div className="relative rounded-2xl bg-foreground/[0.02] border border-foreground/[0.05] p-6 overflow-hidden max-h-32 group-hover:bg-foreground/[0.04] transition-colors">
-                    <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-background/90 to-transparent z-10" />
-                    <div className="flex items-start gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
-                      <p className="text-sm text-foreground/60 leading-relaxed line-clamp-3">
-                        {report.report_content?.replace(/[#*>\-`]/g, '').slice(0, 350)}…
-                      </p>
-                    </div>
-                  </div>
-
-
-                  {/* Actions — client component */}
-                  <ReportCardActions
-                    id={report.id}
-                    reportContent={report.report_content}
-                    industry={report.industry || 'Compliance'}
-                  />
-
-                </div>
-              );
-            })}
+          <div className="glass-card rounded-[2.5rem] overflow-hidden border border-foreground/[0.07] shadow-2xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-foreground/[0.03] border-b border-foreground/[0.07]">
+                    <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-foreground/40">Industry & Designation</th>
+                    <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-foreground/40">Date Generated</th>
+                    <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-foreground/40">Audit Status</th>
+                    <th className="px-8 py-6 text-xs font-bold uppercase tracking-widest text-foreground/40 text-right">Professional Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-foreground/[0.05]">
+                  {reports.map((report: any) => {
+                    const style = getIndustryStyle(report.industry || 'Other');
+                    return (
+                      <tr 
+                        key={report.id} 
+                        className="group hover:bg-foreground/[0.02] transition-colors"
+                      >
+                        <td className="px-8 py-8">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-10 h-10 rounded-xl ${style.bg} flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-110`}>
+                              <Building2 className={`w-5 h-5 ${style.color}`} />
+                            </div>
+                            <div className="space-y-1">
+                              <p className="font-bold text-lg">{report.industry || 'General Business'}</p>
+                              <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold tracking-tight ${style.badge}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                                {report.industry?.toUpperCase() || 'COMPLIANCE'}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-8">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-sm">{formatDate(report.created_at)}</span>
+                            <span className="text-xs text-foreground/30 flex items-center gap-1">
+                              <Building2 className="w-3 h-3" />
+                              {getDeviceName(report.user_agent)}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-8">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/5 border border-emerald-500/10 rounded-lg w-fit">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">BOARD-READY</span>
+                          </div>
+                        </td>
+                        <td className="px-8 py-8">
+                          <div className="flex justify-end">
+                            <ReportCardActions
+                              id={report.id}
+                              reportContent={report.report_content}
+                              industry={report.industry || 'Compliance'}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
+
       </main>
 
       <footer className="relative z-10 border-t border-foreground/[0.06] py-8 text-center text-foreground/25 text-sm no-print">
