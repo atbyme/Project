@@ -110,36 +110,69 @@ export default function ComplianceWizard() {
       // 1. Audit Log 
       await logReportDownload("Shield AI Audit Bundle");
       
-      // 2. Direct-to-file Download (Professional PDF Engine)
+      // 2. Multi-page High-Fidelity Engine
       const element = reportRef.current;
       
-      // High-quality capture
+      // Force light-mode styles for the capture
+      element.classList.add('bg-white', 'text-black', 'p-8');
+      element.classList.remove('prose-invert', 'glass-card');
+
       const canvas = await html2canvas(element, {
         scale: 2, 
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff', // Force white background for professional document look
-        windowWidth: 1200, // Ensure desktop-like layout in PDF
+        backgroundColor: '#ffffff',
+        windowWidth: 1200,
       });
+
+      // Cleanup styles immediately after capture
+      element.classList.remove('bg-white', 'text-black', 'p-8');
+      element.classList.add('prose-invert', 'glass-card');
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
+      
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = pdfWidth / imgWidth;
+      const canvasPageHeight = pdfHeight / ratio;
+      
+      let heightLeft = imgHeight;
+      let position = 0;
+      let pageCount = 0;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      while (heightLeft > 0) {
+        if (pageCount > 0) pdf.addPage();
+        
+        // Add only the part of the image that fits on the current page
+        pdf.addImage(
+          imgData, 
+          'PNG', 
+          0, 
+          -position * ratio, 
+          pdfWidth, 
+          imgHeight * ratio
+        );
+        
+        heightLeft -= canvasPageHeight;
+        position += canvasPageHeight;
+        pageCount++;
+      }
+
       const industryName = answers.industry || 'Compliance';
       pdf.save(`ComplianceShield_${industryName.replace(/\s+/g, '_')}_Report.pdf`);
 
 
     } catch (err) {
       console.error('Download failed:', err);
-      // Fallback
       window.print();
     } finally {
       setIsDownloading(false);
     }
   };
+
 
 
 
