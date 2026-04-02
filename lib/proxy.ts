@@ -32,10 +32,9 @@ export async function updateSession(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) => {
-            // Remove maxAge to make them session cookies (clears on tab close)
-            const sessionOptions = { ...options, maxAge: undefined };
-            supabaseResponse.cookies.set(name, value, sessionOptions);
+            supabaseResponse.cookies.set(name, value, options);
           })
+
         },
 
       },
