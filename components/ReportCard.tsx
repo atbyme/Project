@@ -1,4 +1,7 @@
+'use client';
+
 import React, { useState, useRef } from 'react';
+
 import { Download, Loader2, Eye, EyeOff, FileText, CheckCircle2 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { logReportDownload } from '@/app/actions/audit';
