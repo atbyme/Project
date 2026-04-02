@@ -14,12 +14,12 @@ export const ComplianceSchema = z.any();
 export type ComplianceData = z.infer<typeof ComplianceSchema>;
 
 const FALLBACK_MODELS = [
-  "google/gemini-2.0-flash-exp:free", // Fastest & Highest Quality
-  "google/gemini-flash-1.5-8b:free",  // Ultra-Fast failover
-  "qwen/qwen-2.5-72b-instruct:free",  // High-Logic expert model
-  "mistralai/mistral-7b-instruct:free",
-  "openrouter/free" // General auto-route as final safety net
+  "google/gemini-2.0-flash-exp:free", // Highest daily limit (Stable)
+  "google/gemini-flash-1.5-8b:free",  // Secondary high-capacity fallback
+  "qwen/qwen-2.5-72b-instruct:free",  // High-Logic fallback
+  "mistralai/mistral-7b-instruct:free" // Final safety net
 ];
+
 
 
 export async function callOpenRouter(prompt: string, model: string = "openrouter/free", maxTokens: number = 2000) {
@@ -61,6 +61,15 @@ export async function callOpenRouter(prompt: string, model: string = "openrouter
           return data.choices[0].message.content;
         }
       }
+
+      // ── SMART RETRY LOGIC for FREE TIER ────────────────────────────────
+      // If we hit a 429 (Rate Limit), we wait 2 seconds for a "Cooldown" 
+      // before trying the next model. This often bypasses meta-limiters.
+      if (response.status === 429) {
+        console.warn(`[AI-COOLDOWN] Rate limit hit on ${currentModel}. Waiting 2s for bypass...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
 
 
       const errorData = await response.json().catch(() => ({}));
