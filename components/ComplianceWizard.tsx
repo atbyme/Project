@@ -268,16 +268,24 @@ export default function ComplianceWizard() {
               currentStep === 0 ? "Analyzing Industry..." :
               currentStep < 5 ? "Contextualizing Audit..." :
               "Synthesizing Strategy..."
-            ) : "Generating Report..."}
+            ) : "Generating 2026 Audit Bundle..."}
           </h2>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-4 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm font-bold uppercase tracking-tight shadow-sm"
+          >
+            GUARANTEE: 15-Second Audit Synthesis Cycle.
+          </motion.div>
           <p className="text-foreground/40 leading-relaxed font-medium capitalize">
             {isThinking ? (
               currentStep === 0 ? "Identifying sector-specific risk profiles." :
               currentStep < 5 ? "Referencing previous responses for depth." :
               "Finalizing regulatory cross-references."
-            ) : "Your Senior Legal Partner is creating your audit bundle."}
+            ) : "Our 100% Free Elite AI engine is building your high-fidelity compliance bundle. This process takes approximately 15 seconds."}
           </p>
         </div>
+
 
 
         <div className="w-64 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
@@ -317,7 +325,13 @@ export default function ComplianceWizard() {
               className="p-4 bg-emerald-500/5 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm italic shadow-[0_0_15px_rgba(16,185,129,0.1)]"
             >
 
-              {currentStep === 0 && "Pro-Tip: Choosing the right industry helps our AI target the exact GDPR Article that applies to you."}
+              {currentStep === 0 && (
+                <div className="space-y-1">
+                  <p>Step 1: Selecting your industry allows our AI to target the exact GDPR/Compliance Articles that apply to you.</p>
+                  <p className="text-[10px] uppercase tracking-widest opacity-60">Performance Guarantee: 15-Second Full Audit Synthesis.</p>
+                </div>
+              )}
+
               {currentStep > 0 && currentStep < 5 && "Great progress! You're building a solid foundation for your legal audit."}
               {currentStep >= 5 && currentStep < 9 && "Almost there. These final details are what differentiate a good report from an expert one."}
               {currentStep === 9 && "Final step! Our engine is ready to synthesize your custom 2026 Table of Contents."}

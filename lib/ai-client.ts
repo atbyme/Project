@@ -14,12 +14,13 @@ export const ComplianceSchema = z.any();
 export type ComplianceData = z.infer<typeof ComplianceSchema>;
 
 const FALLBACK_MODELS = [
-  "openrouter/free", // Stable auto-router for free models
-  "google/gemini-2.0-flash-exp:free",
-  "google/gemini-flash-1.5-8b:free",
+  "google/gemini-2.0-flash-exp:free", // Fastest & Highest Quality
+  "google/gemini-flash-1.5-8b:free",  // Ultra-Fast failover
+  "qwen/qwen-2.5-72b-instruct:free",  // High-Logic expert model
   "mistralai/mistral-7b-instruct:free",
-  "microsoft/phi-3-mini-128k-instruct:free"
+  "openrouter/free" // General auto-route as final safety net
 ];
+
 
 export async function callOpenRouter(prompt: string, model: string = "openrouter/free", maxTokens: number = 2000) {
   const apiKey = process.env.OPENROUTER_API_KEY;
