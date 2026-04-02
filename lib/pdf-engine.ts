@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 export async function generateProfessionalPDF(
   element: HTMLDivElement, 
@@ -8,35 +8,39 @@ export async function generateProfessionalPDF(
 ) {
   try {
     // 1. Professional Styling Injection
-    // Force legible black text on white background for the PDF document
     element.classList.add('bg-white', 'text-black', 'p-10');
     element.classList.remove('prose-invert', 'glass-card', 'bg-background');
 
     // 2. High-DPI Capture with stabilization delay
-    // We wait 150ms to ensure the browser has applied the 'prose-slate' styles to the mirror
-    await new Promise(resolve => setTimeout(resolve, 150));
+    // We wait 350ms for more robust CSS rendering on mobile browsers
+    await new Promise(resolve => setTimeout(resolve, 350));
 
-    const canvas = await html2canvas(element, {
-
-      scale: 2, 
-      useCORS: true,
-      logging: false,
+    // 3. Modern PNG Capture (more stable than direct canvas)
+    const dataUrl = await toPng(element, {
+      pixelRatio: 2,
       backgroundColor: options.backgroundColor || '#ffffff',
-      windowWidth: 1200, // Standardize width for professional report layout
+      cacheBust: true,
+      style: {
+        visibility: 'visible',
+      }
     });
 
-    // 3. Cleanup Styles Immediately (don't break the UI)
+    // 4. Cleanup Styles Immediately
     element.classList.remove('bg-white', 'text-black', 'p-10');
     element.classList.add('prose-invert', 'glass-card');
 
-    // 4. Multi-Page Slicing Logic (Smart A4 Layout)
-    const imgData = canvas.toDataURL('image/png');
+    // 5. Multi-Page Slicing Logic (Smart A4 Layout)
     const pdf = new jsPDF('p', 'mm', 'a4');
-    
     const pdfWidth = pdf.internal.pageSize.getWidth();
     const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
+    
+    // Create a temporary image to calculate dimensions
+    const img = new Image();
+    img.src = dataUrl;
+    await new Promise(resolve => img.onload = resolve);
+    
+    const imgWidth = img.width;
+    const imgHeight = img.height;
     const ratio = pdfWidth / imgWidth;
     const canvasPageHeight = pdfHeight / ratio;
     
@@ -48,7 +52,7 @@ export async function generateProfessionalPDF(
       if (pageCount > 0) pdf.addPage();
       
       pdf.addImage(
-        imgData, 
+        dataUrl, 
         'PNG', 
         0, 
         -position * ratio, 
@@ -66,8 +70,8 @@ export async function generateProfessionalPDF(
 
   } catch (error: any) {
     console.error('Professional PDF Engine Failure:', error);
-    // Explicit digital-only error handling
-    throw new Error(`PDF generation failed: ${error.message || 'Unknown render error'}. Please try a modern browser like Chrome or Safari.`);
+    throw new Error(`PDF generation failed: ${error.message || 'Unknown render error'}. Please refresh and try again.`);
   }
 }
+
 

@@ -17,14 +17,15 @@ export default async function LandingPage() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-foreground/[0.07] bg-background/70 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-[0_0_14px_rgba(16,185,129,0.35)]">
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center shadow-[0_0_14px_rgba(16,185,129,0.35)] group-hover:scale-105 transition-transform">
               <Shield className="w-4 h-4 text-black" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-foreground">
+            <span className="text-xl font-bold tracking-tight text-foreground transition-colors group-hover:text-emerald-500">
               ComplianceShield <span className="text-emerald-500">AI</span>
             </span>
-          </div>
+          </Link>
+
           <div className="flex items-center gap-6 text-sm text-foreground/50">
             <a href="#how"     className="hidden md:block hover:text-foreground transition-colors">How it works</a>
             <a href="#pricing" className="hidden md:block hover:text-foreground transition-colors">Pricing</a>
