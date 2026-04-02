@@ -14,24 +14,23 @@ export const ComplianceSchema = z.any();
 export type ComplianceData = z.infer<typeof ComplianceSchema>;
 
 const FALLBACK_MODELS = [
+  "openrouter/free", // Stable auto-router for free models
   "google/gemini-2.0-flash-exp:free",
   "google/gemini-flash-1.5-8b:free",
   "mistralai/mistral-7b-instruct:free",
-  "microsoft/phi-3-mini-128k-instruct:free",
-  "openrouter/auto"
+  "microsoft/phi-3-mini-128k-instruct:free"
 ];
 
-export async function callOpenRouter(prompt: string, model: string = "google/gemini-2.0-flash-exp:free", maxTokens: number = 2000) {
+export async function callOpenRouter(prompt: string, model: string = "openrouter/free", maxTokens: number = 2000) {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  if (!apiKey) throw new Error("OPENROUTER_API_KEY missing");
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY is missing from your .env.local file.");
 
-  // Models to try in order (the requested one first)
   const modelsToTry = [model, ...FALLBACK_MODELS.filter(m => m !== model)];
-  let lastError: Error | null = null;
+  let lastErrorSummary = "";
 
   for (const currentModel of modelsToTry) {
     try {
-      console.log(`[AI-ROUTING] Attempting: ${currentModel}`);
+      console.log(`[AI-DIAGNOSTIC] Trying model: ${currentModel}`);
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -56,13 +55,17 @@ export async function callOpenRouter(prompt: string, model: string = "google/gem
       }
 
       const errorData = await response.json().catch(() => ({}));
-      console.warn(`[AI-ROUTING] ${currentModel} failed: ${response.status}`, errorData);
+      const errorMsg = errorData.error?.message || response.statusText;
+      console.warn(`[AI-DIAGNOSTIC] ${currentModel} failed (${response.status}): ${errorMsg}`);
+      lastErrorSummary = `Detailed Reason: "${errorMsg}" (on model: ${currentModel})`;
+      
     } catch (err: any) {
-      console.warn(`[AI-ROUTING] ${currentModel} error:`, err.message);
-      lastError = err;
+      console.warn(`[AI-DIAGNOSTIC] Connection error for ${currentModel}:`, err.message);
+      lastErrorSummary = `Connection Error: ${err.message}`;
     }
   }
 
-  throw lastError || new Error("All AI endpoints failed. Check API Key/Balance.");
+  throw new Error(`AI GENERATION FAILED after trying ${modelsToTry.length} models. \n\n${lastErrorSummary}\n\nTIP: If you see "Rate Limit Exceeded", wait 24 hours or add $5 balance to your OpenRouter account to unlock higher limits.`);
 }
+
 
