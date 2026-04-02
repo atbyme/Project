@@ -41,7 +41,10 @@ function getDeviceName(ua: string | null) {
 }
 
 // ── Page ────────────────────────────────────────────────────────────────────
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -57,12 +60,13 @@ export default async function DashboardPage() {
   }
 
   const totalReports    = reports?.length ?? 0;
-  const uniqueIndustries = [...new Set(reports?.map(r => r.industry).filter(Boolean) ?? [])];
+  const uniqueIndustries = [...new Set((reports || []).map((r: any) => r.industry).filter(Boolean))];
   const now = new Date();
-  const thisMonth = reports?.filter(r => {
+  const thisMonth = (reports || []).filter((r: any) => {
     const d = new Date(r.created_at);
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length ?? 0;
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -159,7 +163,8 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {reports.map((report) => {
+            {reports.map((report: any) => {
+
               const style = getIndustryStyle(report.industry || 'Other');
               return (
                 <div

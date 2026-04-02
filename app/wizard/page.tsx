@@ -4,7 +4,10 @@ import { Shield } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
+export const dynamic = 'force-dynamic';
+
 export default function WizardPage() {
+
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-emerald-500/30">
       <div className="fixed inset-0 glow-mesh opacity-30 pointer-events-none z-0" />
