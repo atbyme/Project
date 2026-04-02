@@ -31,8 +31,13 @@ export async function callOpenRouter(prompt: string, model: string = "openrouter
   for (const currentModel of modelsToTry) {
     try {
       console.log(`[AI-DIAGNOSTIC] Trying model: ${currentModel}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s Hard Timeout
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Authorization": `Bearer ${apiKey}`,
           "HTTP-Referer": "https://project-eight-orpin-33.vercel.app", 
@@ -42,10 +47,12 @@ export async function callOpenRouter(prompt: string, model: string = "openrouter
         body: JSON.stringify({
           model: currentModel,
           messages: [{ role: "user", content: prompt }],
-          temperature: 0.6,
+          temperature: 0.7, // Higher creativity for unique questions
           max_tokens: maxTokens,
         }),
       });
+
+      clearTimeout(timeoutId);
 
       if (response.ok) {
         const data = await response.json();
@@ -53,6 +60,7 @@ export async function callOpenRouter(prompt: string, model: string = "openrouter
           return data.choices[0].message.content;
         }
       }
+
 
       const errorData = await response.json().catch(() => ({}));
       const errorMsg = errorData.error?.message || response.statusText;

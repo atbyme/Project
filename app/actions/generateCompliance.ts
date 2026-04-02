@@ -62,14 +62,22 @@ export async function generateComplianceReport(rawAnswers: any) {
     const seed          = Math.random().toString(36).substring(2, 9);
 
     // ── 2. Unified High-Speed Generation (2026 Engine) ───────────────────
+    const selections = Object.entries(rawAnswers)
+      .filter(([q, a]) => q !== 'industry' && q !== 'step')
+      .map(([q, a]) => `- ${q}: ${a}`)
+      .join('\n');
+
     const unifiedPrompt = `
-You are a Senior Legal Partner at a premier global compliance firm. 
-CLIENT PROFILE:
-- Entity: ${industry} Firm
-- Operational Scale: ${companySize}
-- Data Sensitivity: ${dataTypes}
-- Jurisdiction: ${jurisdiction}
-[Session ID: ${seed}]
+      ROLE: You are the Senior Legal Partner at a global elite compliance firm.
+      CLIENT DATA (Dynamic Audit Selections):
+      ${selections}
+      
+      CORE PROFILE:
+      - Industry: ${industry}
+      - Scale: ${companySize}
+      - Risk Vectors: ${dataTypes}
+      - Jurisdiction: ${jurisdiction}
+
 
 INSTRUCTIONS:
 Generate a strictly professional, board-ready COMPLIANCE AUDIT BUNDLE. 

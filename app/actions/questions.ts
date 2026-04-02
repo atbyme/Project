@@ -20,33 +20,38 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
     // don't count towards the 5-report final bundle limit.
 
     const history = Object.entries(previousAnswers)
-      .filter(([q, a]) => q.includes(' ') || q === 'industry') // Only show the full titles in history to avoid confusing AI with IDs
-      .map(([q, a]) => `Q: ${q}, A: ${a}`)
+      .filter(([q, a]) => q.includes(' ') || q === 'industry' || q === 'step') 
+      .map(([q, a]) => `User Selection for "${q}": ${a}`)
       .join('\n');
 
     const prompt = `
-      You are a World-Class Compliance Consultant. 
-      The user is an audit for a ${previousAnswers.industry || 'company'}.
-      Previous history:
+      ROLE: You are a WORLD-CLASS SENIOR COMPLIANCE PARTNER specializing in ${previousAnswers.industry || 'Global Cybersecurity'}.
+      
+      CONTEXT: You are conducting a deep-dive compliance audit.
+      SESSION HISTORY:
       ${history}
 
-      This is step ${stepCount + 1} of 10.
-      CRITICAL: Generate a UNIQUE, high-value compliance question that helps determine GDPR or HIPAA readiness.
-      CRITICAL: DO NOT REPEAT any topics or themes from the previous history. 
-      CRITICAL: If the history is ${history}, the new question must cover a COMPLETELY DIFFERENT security domain (e.g., if history was about Data Privacy, ask about Physical Security or Incident Response).
+      OBJECTIVE: Generate the NEXT logical question for Step ${stepCount + 1} of 10.
+      
+      RULES for UNIQUNESS:
+      1. CRITICAL: NEVER repeat a topic or domain already covered in the HISTORY. 
+      2. CRITICAL: If the user chose a specific industry, your questions MUST be specialized for that sector (e.g., if Finance, ask about PCI-DSS/SOX; if Health, ask about HIPAA/HITECH).
+      3. CRITICAL: Avoid generic "Yes/No" questions. Force the user to choose between high-value operational strategies.
+      4. STYLE: Use authoritative, boardroom-level language.
 
-      Return ONLY a JSON object in this format:
+      OUTPUT FORMAT (JSON ONLY):
       {
         "id": "dynamic_step_${stepCount}",
-        "title": "Question text here?",
-        "description": "Short explanation of why this matters for compliance.",
-        "options": ["Option 1", "Option 2", "Option 3", "Option 4"]
+        "title": "Professional question here?",
+        "description": "Expert reasoning for this audit point.",
+        "options": ["High-Value Option A", "High-Value Option B", "Option C", "Option D"]
       }
 
-      Do not include any other text or markdown.
+      Return ONLY the JSON. No preamble.
     `;
 
-    const response = await callOpenRouter(prompt, 'google/gemini-2.0-flash-exp:free', 400); // Faster, low-latency model
+    const response = await callOpenRouter(prompt, 'google/gemini-2.0-flash-exp:free', 500); 
+// Faster, low-latency model
 
     // Extract only the JSON object, ignoring conversational text
     const match = response.match(/\{[\s\S]*\}/);

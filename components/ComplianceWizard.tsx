@@ -240,12 +240,13 @@ export default function ComplianceWizard() {
           />
           {isThinking ? <Sparkles className="w-32 h-32 text-emerald-500 relative z-10 animate-pulse" /> : <Shield className="w-32 h-32 text-emerald-500 relative z-10" />}
         </div>
-        <div className="space-y-4 max-w-sm">
-          <h2 className="text-4xl font-bold">{isThinking ? 'Consulting...' : 'Expertly Building...'}</h2>
-          <p className="text-foreground/40 leading-relaxed">
-            {isThinking ? 'We are analyzing your niche to provide the most relevant next step.' : 'Your Senior Legal Partner is synthesizing your 2026 Table of Contents...'}
+        <div className="space-y-4 max-w-sm px-6">
+          <h2 className="text-4xl font-bold text-foreground">{isThinking ? 'Consulting...' : 'Expertly Building...'}</h2>
+          <p className="text-foreground/40 leading-relaxed font-medium">
+            {isThinking ? 'We are analyzing your specific industry context to provide the most relevant next step.' : 'Your Senior Legal Partner is synthesizing your 2026 Table of Contents...'}
           </p>
         </div>
+
         <div className="w-64 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
           <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: 5, repeat: Infinity }} />
         </div>
@@ -292,31 +293,40 @@ export default function ComplianceWizard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {currentQuestion.options.map((option: string) => {
+            {currentQuestion.options.map((option: string, idx: number) => {
               const isSelected = answers[currentQuestion.id] === option;
               return (
-                <button
+                <motion.button
                   key={option}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleSelect(option)}
                   className={cn(
                     "p-8 rounded-[2rem] text-left transition-all border-2 group relative overflow-hidden",
-                    isSelected ? "bg-emerald-500/10 border-emerald-500 text-white" : "bg-white/5 border-white/5 text-white/40 hover:bg-white/10"
+                    isSelected ? "bg-emerald-500/10 border-emerald-500 text-foreground" : "bg-foreground/[0.03] border-foreground/[0.05] text-foreground/40 hover:bg-foreground/[0.05] hover:border-foreground/10"
                   )}
                 >
                   <div className="flex items-center justify-between relative z-10">
-                    <span className="text-lg font-bold">{option}</span>
+                    <span className="text-lg font-bold transition-colors group-hover:text-foreground">{option}</span>
                     {isSelected && <CheckCircle2 className="w-6 h-6 text-emerald-500" />}
                   </div>
-                </button>
+                  {/* Subtle hover glow */}
+                  <div className="absolute inset-0 bg-emerald-500/0 group-hover:bg-emerald-500/[0.02] transition-colors" />
+                </motion.button>
               );
             })}
           </div>
+
         </motion.div>
       </AnimatePresence>
 
       {error && <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium">{error}</div>}
 
-      <div className="flex items-center justify-end pt-12 border-t border-white/5">
+      <div className="flex items-center justify-end pt-12 border-t border-foreground/5">
+
         <button
           onClick={next}
           disabled={!answers[currentQuestion.id] || isThinking}
