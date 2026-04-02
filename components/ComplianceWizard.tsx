@@ -172,9 +172,27 @@ export default function ComplianceWizard() {
               </a>
             )}
             <div className="flex items-center gap-2 w-full md:w-auto">
-              <button onClick={downloadPDF} disabled={isDownloading} className="flex-1 md:flex-none px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+              {/* Off-screen capture container for high-fidelity PDF rendering (hidden: none breaks canvas) */}
+              <div className="fixed -left-[9999px] top-0 pointer-events-none">
+                <div 
+                  ref={reportRef} 
+                  className="w-[1000px] p-16 bg-white text-black prose prose-slate max-w-none"
+                  style={{ fontFamily: 'Inter, sans-serif' }}
+                >
+                  <div className="text-right text-[10px] text-zinc-400 mb-12 uppercase tracking-widest font-bold">
+                    ComplianceShield AI | Official Audit Bundle v2026
+                  </div>
+                  <ReactMarkdown>{report}</ReactMarkdown>
+                </div>
+              </div>
+
+              <button
+                onClick={downloadPDF}
+                disabled={isDownloading}
+                className="flex-1 md:flex-none px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+              >
                 {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                {isDownloading ? 'Logging Access...' : (isTrial ? 'Download Trial PDF' : 'Download Bundle')}
+                {isDownloading ? 'Downlaoding...' : 'Download Report'}
               </button>
               <button 
                 onClick={() => isDemo ? window.location.href = '/wizard' : window.location.reload()} 
@@ -186,9 +204,10 @@ export default function ComplianceWizard() {
             </div>
           </div>
         </div>
-        <div ref={reportRef} className="glass-card p-10 rounded-[2.5rem] prose prose-emerald dark:prose-invert max-w-none shadow-2xl">
+        <div className="glass-card p-10 rounded-[2.5rem] prose prose-emerald dark:prose-invert max-w-none shadow-2xl">
           <ReactMarkdown>{report}</ReactMarkdown>
         </div>
+
 
         {/* Post-Report CTA for Trials */}
         {isTrial && !isDemo && (
@@ -254,16 +273,16 @@ export default function ComplianceWizard() {
         <motion.div key={currentStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
           <div className="space-y-4">
             <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">{currentQuestion.title}</h2>
-            <p className="text-xl text-white/40 flex items-center gap-2">
+            <p className="text-xl text-foreground/40 flex items-center gap-2">
               <Info className="w-5 h-5 text-emerald-500/40" />
               {currentQuestion.description}
             </p>
-            {/* [HUMAN TOUCH]: Pro-Tip for the buyer */}
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
-              className="p-4 bg-emerald-500/5 border-l-4 border-emerald-500 rounded-r-xl text-emerald-400 text-sm italic shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+              className="p-4 bg-emerald-500/5 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm italic shadow-[0_0_15px_rgba(16,185,129,0.1)]"
             >
+
               {currentStep === 0 && "Pro-Tip: Choosing the right industry helps our AI target the exact GDPR Article that applies to you."}
               {currentStep > 0 && currentStep < 5 && "Great progress! You're building a solid foundation for your legal audit."}
               {currentStep >= 5 && currentStep < 9 && "Almost there. These final details are what differentiate a good report from an expert one."}

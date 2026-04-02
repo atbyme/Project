@@ -53,12 +53,20 @@ export function ReportCardActions({ id, reportContent, industry }: ReportCardAct
 
   return (
     <div className="space-y-4">
-      {/* Hidden container for PDF capture to ensure perfect light-mode formatting */}
-      <div className="hidden">
-        <div ref={pdfSourceRef} className="p-12 bg-white text-black prose max-w-none">
+      {/* Off-screen capture container for high-fidelity PDF rendering (hidden: none breaks canvas) */}
+      <div className="fixed -left-[9999px] top-0 pointer-events-none">
+        <div 
+          ref={pdfSourceRef} 
+          className="w-[1000px] p-16 bg-white text-black prose prose-slate max-w-none"
+          style={{ fontFamily: 'Inter, sans-serif' }}
+        >
+          <div className="text-right text-[10px] text-zinc-400 mb-12 uppercase tracking-widest font-bold">
+            ComplianceShield AI | Official Audit Bundle v2026
+          </div>
           <ReactMarkdown>{reportContent}</ReactMarkdown>
         </div>
       </div>
+
 
       {isExpanded && (
         <div className="rounded-2xl bg-background border border-foreground/10 p-6 prose prose-sm prose-emerald dark:prose-invert max-w-none overflow-auto max-h-[600px] text-sm leading-relaxed shadow-inner">
