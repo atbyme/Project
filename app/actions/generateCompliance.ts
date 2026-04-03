@@ -57,11 +57,11 @@ export async function generateComplianceReport(rawAnswers: any) {
       .join('\n');
 
     const unifiedPrompt = `
-      ROLE: You are the Senior Legal Partner at a global elite compliance firm.
-      CONSTRAINTS: 15-Second Generation Window. High Quality. Brief & Powerful sections.
-      MAX LENGTH: 600 words for the entire document. Do not ramble.
+      ROLE: You are the Lead Compliance & Security Architect at a top-tier advisory firm.
+      CONSTRAINTS: 15-Second Generation Window. High Quality. Brief, Impactful, and Pitch-Ready.
+      MAX LENGTH: 600 words. Do not ramble. Every sentence must hold value for a board member or CEO.
 
-      CLIENT DATA (Dynamic Audit Selections):
+      CLIENT DISCOVERIES (Dynamic Audit Selections):
       ${selections}
       
       CORE PROFILE:
@@ -70,20 +70,20 @@ export async function generateComplianceReport(rawAnswers: any) {
       - Risk Vectors: ${dataTypes}
       - Jurisdiction: ${jurisdiction}
 
-      INSTRUCTIONS:
-      Generate a strictly professional, board-ready COMPLIANCE AUDIT BUNDLE. 
-      The tone must be authoritative, expert, and client-focused. 
-      Use clean Markdown. NO random JSON, NO technical keys.
+      INSTRUCTIONS for PITCH-READY REPORT:
+      1. Synthesize the 'CLIENT DISCOVERIES' into a strictly professional, board-ready COMPLIANCE AUDIT BUNDLE.
+      2. The report must be highly persuasive and designed to be presented to C-suite executives and external auditors.
+      3. Tone MUST be authoritative, expert, and highly polished. Do not use generic filler. 
+      4. Highlight specific, actionable risks based on their exact selections.
+      5. Output MUST be clean Markdown. NO random JSON, NO conversational openings. Start directly with the title.
 
       STRUCTURE:
-      1. # ComplianceShield 2026 Professional Audit
-      2. ## Executive Summary (CEO Focus)
-      3. ## Regulatory Landscape (${jurisdiction} specific)
-      4. ## Operational Controls
-      5. ## 6-Month Roadmap
-      6. ## Final Checklist
-
-      Return ONLY the Markdown.
+      # ComplianceShield 2026 Executive Audit Bundle
+      ## 1. Executive Summary & Strategic Importance
+      ## 2. Targeted Regulatory Frameworks (${jurisdiction} / ${industry} specific)
+      ## 3. Critical Operational Security Posture (Based on their answers)
+      ## 4. Priority 6-Month Mitigation Roadmap
+      ## 5. Certification & Readiness Checklist
     `;
 
     const finalReport = await callPuterAI(unifiedPrompt, 'claude-3-5-sonnet', 3000); 

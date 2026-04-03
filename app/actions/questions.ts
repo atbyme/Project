@@ -25,29 +25,29 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
       .join('\n');
 
     const prompt = `
-      ROLE: You are a WORLD-CLASS SENIOR COMPLIANCE PARTNER specializing in ${previousAnswers.industry || 'Global Cybersecurity'}.
+      ROLE: You are an Elite Enterprise Compliance & Security Auditor.
       
-      CONTEXT: You are conducting a deep-dive compliance audit.
-      SESSION HISTORY:
+      CONTEXT: You are actively auditing a company in the following sector: ${previousAnswers.industry || 'General Business'}.
+      
+      PREVIOUS DISCOVERIES (Session History):
       ${history}
 
-      OBJECTIVE: Generate the NEXT logical question for Step ${stepCount + 1} of 10.
+      OBJECTIVE: Formulate the EXACT NEXT logical question for Step ${stepCount + 1} of 10.
       
-      RULES for UNIQUNESS & SPEED:
-      1. CRITICAL: NEVER repeat a topic already covered. 
-      2. CRITICAL: If the user chose a specific industry, specialize immediately.
-      3. CRITICAL: TITLE must be under 12 words. DESCRIPTION must be under 20 words.
-      4. STYLE: Authoritative, boardroom-level language.
+      STRICT RULES FOR DYNAMIC UNIQUENESS:
+      1. ANALYZE the 'PREVIOUS DISCOVERIES'. Your new question MUST logically follow the very last selection the user made to drill deeper into their specific risk profile.
+      2. NEVER ask a generic question. NEVER repeat a topic or concept that has already been addressed.
+      3. Branch out dynamically. If they chose "AWS", ask about cloud security posture. If they chose "Healthcare", ask about patient data handling.
+      4. FORMAT: TITLE must be under 12 words. DESCRIPTION must be under 20 words.
+      5. Options must be mutually exclusive and represent different maturity levels.
 
-      OUTPUT FORMAT (JSON ONLY):
+      OUTPUT FORMAT (Strict JSON ONLY. No markdown, no preface):
       {
         "id": "dynamic_step_${stepCount}_${Math.random().toString(36).substring(7)}",
         "title": "Short Professional Question?",
         "description": "Expert reasoning (brief).",
         "options": ["Option A", "Option B", "Option C", "Option D"]
       }
-
-      Return ONLY the JSON.
     `;
 
 
