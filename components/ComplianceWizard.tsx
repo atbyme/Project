@@ -6,8 +6,9 @@ import Link from 'next/link';
 import { CheckCircle2, ChevronRight, ChevronLeft, Shield, Zap, Lock, Info, FileText, Download, RotateCcw, Loader2, Sparkles } from 'lucide-react';
 
 import ReactMarkdown from 'react-markdown';
-import { saveComplianceReport } from '@/app/actions/saveReport';
+import { generateComplianceReport } from '@/app/actions/generateCompliance';
 import { logReportDownload } from '@/app/actions/audit';
+import { generateNextQuestion } from '@/app/actions/questions';
 import { generateProfessionalPDF } from '@/lib/pdf-engine';
 
 import { clsx, type ClassValue } from 'clsx';
@@ -37,9 +38,19 @@ export default function ComplianceWizard() {
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isTrial, setIsTrial] = useState(false);
+  const [isPuterAuth, setIsPuterAuth] = useState<boolean | null>(null);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // 0. Update Puter Auth Status
+    const updatePuterStatus = async () => {
+      if (typeof window !== 'undefined' && window.puter) {
+        const signedIn = await window.puter.auth.isSignedIn();
+        setIsPuterAuth(signedIn);
+      }
+    };
+    updatePuterStatus();
+
     // 1. Check for Demo Mode in URL
     const params = new URLSearchParams(window.location.search);
     if (params.get('demo') === 'true') {
@@ -55,6 +66,18 @@ export default function ComplianceWizard() {
         });
       }
     });
+
+    // 3. Proactive Puter Auth Check
+    const checkPuter = async () => {
+      if (typeof window !== 'undefined' && window.puter) {
+        const isSignedIn = await window.puter.auth.isSignedIn();
+        if (!isSignedIn) {
+          // If not signed in, show a clearer notice or prompt
+          console.log("Puter not signed in. AI calls will trigger a redirect.");
+        }
+      }
+    };
+    checkPuter();
 
   }, []);
 
@@ -73,28 +96,21 @@ export default function ComplianceWizard() {
         return;
       }
 
-      // 2. Otherwise, fetch a NEW unique question from Puter AI (Ultra Fast)
+      // 2. Otherwise, fetch a NEW unique question from the AI (Secure Backend)
       setIsThinking(true);
       setError(null);
       try {
-        const history = Object.entries(answers)
-          .filter(([k]) => k.includes('?') || k === 'industry')
-          .map(([k, v]) => `${k}: ${v}`)
-          .join('\n');
-
-        const prompt = `Next question for Step ${currentStep + 1}/10. Context:\n${history}\nReturn JSON: {"id":"q${currentStep}","title":"Short Question?","description":"Brief.","options":["A","B","C","D"]}`;
-
-        const response = await window.puter.ai.chat(prompt, { model: 'openai/gpt-5.4-nano' });
-        const content = response.message.content;
-        const match = content.match(/\{[\s\S]*\}/);
-        if (!match) throw new Error("JSON fail");
-        const newQuestion = JSON.parse(match[0]);
-        
-        setQuestionHistory(prev => [...prev, newQuestion]);
-        setCurrentQuestion(newQuestion);
-        setCurrentStep(currentStep + 1);
-      } catch (err) {
-        setError("AI Speed Lag. Retrying...");
+        const result: any = await generateNextQuestion(answers, currentStep + 1);
+        if (result.success) {
+          const newQuestion = result.data;
+          setQuestionHistory(prev => [...prev, newQuestion]);
+          setCurrentQuestion(newQuestion);
+          setCurrentStep(currentStep + 1);
+        } else {
+          throw new Error(result.error || "AI Engine busy. Retrying...");
+        }
+      } catch (err: any) {
+        setError(err.message || "Connection lag. Please try again.");
         console.error(err);
       } finally {
         setIsThinking(false);
@@ -118,24 +134,14 @@ export default function ComplianceWizard() {
     setIsGenerating(true);
     setError(null);
     try {
-      const selections = Object.entries(answers)
-        .map(([k, v]) => `- ${k}: ${v}`)
-        .join('\n');
-
-      const prompt = `Generate a Professional Compliance Audit Bundle (Markdown). Max 500 words. Sections: Summary, Regs, Controls, Roadmap. Context:\n${selections}`;
-
-      const response = await window.puter.ai.chat(prompt, { model: 'openai/gpt-5.4-nano' });
-      const finalReport = response.message.content;
-      
-      if (!finalReport) throw new Error('Generation failed.');
-      
-      setReport(finalReport);
-
-      // Save to Supabase (Background)
-      saveComplianceReport(finalReport, answers.industry || 'General');
-
-    } catch (err) {
-      setError('Generation failed. Please check your connection.');
+      const result: any = await generateComplianceReport(answers);
+      if (result.success && result.data) {
+        setReport(result.data);
+      } else {
+        throw new Error(result.error || "Synthesis failed.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Audit synthesis lag. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -293,14 +299,14 @@ export default function ComplianceWizard() {
             className="p-4 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm font-bold uppercase tracking-tight shadow-sm flex items-center gap-2"
           >
             <Zap className="w-4 h-4 animate-pulse" />
-            <span>POWERED BY PUTER.JS GPT-5.4 NANO</span>
+            <span>POWERED BY PUTER.JS ELITE AI ENGINE</span>
           </motion.div>
           <p className="text-foreground/40 leading-relaxed font-medium capitalize">
             {isThinking ? (
               currentStep === 0 ? "Identifying sector-specific risk profiles." :
               currentStep < 5 ? "Referencing previous responses for depth." :
               "Finalizing regulatory cross-references."
-            ) : "Our Puter-powered Nano engine is building your high-fidelity compliance bundle in under 5 seconds."}
+            ) : "Our Puter-powered Claude 3.5 engine is building your high-fidelity compliance bundle. This process is optimized for speed and accuracy."}
           </p>
         </div>
 
