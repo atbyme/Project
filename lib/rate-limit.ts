@@ -9,7 +9,7 @@ const MAX_REQUESTS = 5;
 // Memory store: { [ip: string]: timestamp[] }
 const tracker: Record<string, number[]> = {};
 
-export async function checkRateLimit(ip: string): Promise<{ success: boolean; remaining: number }> {
+export async function checkRateLimit(ip: string, maxRequests: number): Promise<{ success: boolean; remaining: number }> {
   const now = Date.now();
   
   if (!tracker[ip]) {
@@ -19,7 +19,7 @@ export async function checkRateLimit(ip: string): Promise<{ success: boolean; re
   // Filter out expired timestamps
   tracker[ip] = tracker[ip].filter(timestamp => now - timestamp < RATE_LIMIT_WINDOW);
 
-  if (tracker[ip].length >= MAX_REQUESTS) {
+  if (tracker[ip].length >= maxRequests) {
     return { success: false, remaining: 0 };
   }
 
@@ -28,6 +28,6 @@ export async function checkRateLimit(ip: string): Promise<{ success: boolean; re
   
   return { 
     success: true, 
-    remaining: MAX_REQUESTS - tracker[ip].length 
+    remaining: maxRequests - tracker[ip].length 
   };
 }

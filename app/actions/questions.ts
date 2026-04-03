@@ -1,6 +1,6 @@
 'use server';
 
-import { callOpenRouter } from '@/lib/ai-client';
+import { callPuterAI } from '@/lib/ai-client';
 import { checkBotScore } from '@/lib/bot-protection';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { headers } from 'next/headers';
@@ -51,7 +51,8 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
     `;
 
 
-    const response = await callOpenRouter(prompt, 'google/gemini-2.0-flash-exp:free', 500); 
+    // Using Puter's GPT-4o-mini for ultra-fast (sub-second) dynamic logic
+    const response = await callPuterAI(prompt, 'gpt-4o-mini', 500); 
 
     // Extract only the JSON object, ignoring conversational text
     const match = response.match(/\{[\s\S]*\}/);

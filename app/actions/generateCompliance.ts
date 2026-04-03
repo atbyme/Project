@@ -1,6 +1,6 @@
 'use server';
 
-import { callOpenRouter, ComplianceSchema, type ComplianceData } from '@/lib/ai-client';
+import { callPuterAI, ComplianceSchema, type ComplianceData } from '@/lib/ai-client';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { checkBotScore } from '@/lib/bot-protection';
 import { headers } from 'next/headers';
@@ -14,38 +14,27 @@ export async function generateComplianceReport(rawAnswers: any) {
       return { success: false, error: 'Access denied: automated request detected.' };
     }
 
-    // ── 0b. IP Rate Limiting (5 reports per hour) ─────────────────────────
+    // ── 0b. Dynamic Rate Limiting ─────────────────────────────────────────
     const headersList = await headers();
     const forwardedFor = headersList.get('x-forwarded-for');
     const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'localhost';
 
-    const limitStatus = await checkRateLimit(ip);
-    if (!limitStatus.success) {
-      return {
-        success: false,
-        error: 'Security limit reached: You can generate up to 5 reports per hour. Please try again shortly, or upgrade to PRO for unlimited access.',
-      };
-    }
-
-    // ── 0c. One-Time Trial Check (for unsigned users) ───────────────────────
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      const { data: existingTrial } = await supabase
-        .from('compliance_reports')
-        .select('id')
-        .eq('ip_address', ip)
-        .is('user_id', null)
-        .maybeSingle();
-
-      if (existingTrial) {
-        return {
-          success: false,
-          error: 'Trial limit reached: You have already generated one free report from this IP. Please sign in to generate more or access your dashboard.',
-        };
-      }
+    // Guests: 1 per hour | Users: 7 per hour
+    const limit = user ? 7 : 1; 
+    const limitStatus = await checkRateLimit(ip, limit);
+    
+    if (!limitStatus.success) {
+      return {
+        success: false,
+        error: user 
+          ? 'Daily Professional limit reached: You have used your 7 reports for this hour. Please try again shortly.'
+          : 'Trial limit reached: Guests can generate 1 report per hour. Please sign in for higher limits (7/hour).',
+      };
     }
+
 
 
     // ── 1. Input Validation (Zod) ─────────────────────────────────────────
@@ -97,8 +86,7 @@ export async function generateComplianceReport(rawAnswers: any) {
       Return ONLY the Markdown.
     `;
 
-    // Using the fastest available free model for 15s guarantee
-    const finalReport = await callOpenRouter(unifiedPrompt, 'google/gemini-2.0-flash-exp:free', 3000); 
+    const finalReport = await callPuterAI(unifiedPrompt, 'claude-3-5-sonnet', 3000); 
 
 
     if (!finalReport) throw new Error('AI Engine failed to produce a report.');

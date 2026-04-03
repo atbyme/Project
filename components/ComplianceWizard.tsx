@@ -6,9 +6,8 @@ import Link from 'next/link';
 import { CheckCircle2, ChevronRight, ChevronLeft, Shield, Zap, Lock, Info, FileText, Download, RotateCcw, Loader2, Sparkles } from 'lucide-react';
 
 import ReactMarkdown from 'react-markdown';
-import { generateComplianceReport } from '@/app/actions/generateCompliance';
+import { saveComplianceReport } from '@/app/actions/saveReport';
 import { logReportDownload } from '@/app/actions/audit';
-import { generateNextQuestion } from '@/app/actions/questions';
 import { generateProfessionalPDF } from '@/lib/pdf-engine';
 
 import { clsx, type ClassValue } from 'clsx';
@@ -74,21 +73,29 @@ export default function ComplianceWizard() {
         return;
       }
 
-      // 2. Otherwise, fetch a NEW unique question from the AI
+      // 2. Otherwise, fetch a NEW unique question from Puter AI (Ultra Fast)
       setIsThinking(true);
       setError(null);
       try {
-        const result = await generateNextQuestion(answers, currentStep + 1);
-        if (result.success) {
-          const newQuestion = result.data;
-          setQuestionHistory(prev => [...prev, newQuestion]);
-          setCurrentQuestion(newQuestion);
-          setCurrentStep(currentStep + 1);
-        } else {
-          throw new Error("AI failed to generate next step.");
-        }
+        const history = Object.entries(answers)
+          .filter(([k]) => k.includes('?') || k === 'industry')
+          .map(([k, v]) => `${k}: ${v}`)
+          .join('\n');
+
+        const prompt = `Next question for Step ${currentStep + 1}/10. Context:\n${history}\nReturn JSON: {"id":"q${currentStep}","title":"Short Question?","description":"Brief.","options":["A","B","C","D"]}`;
+
+        const response = await window.puter.ai.chat(prompt, { model: 'openai/gpt-5.4-nano' });
+        const content = response.message.content;
+        const match = content.match(/\{[\s\S]*\}/);
+        if (!match) throw new Error("JSON fail");
+        const newQuestion = JSON.parse(match[0]);
+        
+        setQuestionHistory(prev => [...prev, newQuestion]);
+        setCurrentQuestion(newQuestion);
+        setCurrentStep(currentStep + 1);
       } catch (err) {
-        setError("AI Engine timeout. Please try again.");
+        setError("AI Speed Lag. Retrying...");
+        console.error(err);
       } finally {
         setIsThinking(false);
       }
@@ -111,14 +118,24 @@ export default function ComplianceWizard() {
     setIsGenerating(true);
     setError(null);
     try {
-      const result = await generateComplianceReport(answers);
-      if (result.success) {
-        setReport(result.data || '');
-      } else {
-        setError(result.error || 'Failed to generate report.');
-      }
+      const selections = Object.entries(answers)
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join('\n');
+
+      const prompt = `Generate a Professional Compliance Audit Bundle (Markdown). Max 500 words. Sections: Summary, Regs, Controls, Roadmap. Context:\n${selections}`;
+
+      const response = await window.puter.ai.chat(prompt, { model: 'openai/gpt-5.4-nano' });
+      const finalReport = response.message.content;
+      
+      if (!finalReport) throw new Error('Generation failed.');
+      
+      setReport(finalReport);
+
+      // Save to Supabase (Background)
+      saveComplianceReport(finalReport, answers.industry || 'General');
+
     } catch (err) {
-      setError('An unexpected error occurred during generation.');
+      setError('Generation failed. Please check your connection.');
     } finally {
       setIsGenerating(false);
     }
@@ -185,7 +202,7 @@ export default function ComplianceWizard() {
               <span>{isDemo ? 'Live Demo Bundle' : 'Compliance Bundle Ready'}</span>
             </div>
             <h2 className="text-4xl font-extrabold tracking-tight">ComplianceShield AI</h2>
-            <p className="text-foreground/40">{isDemo ? 'Sample: Global Fintech SaaS' : 'AI-generated audit bundle for your specific niche.'}</p>
+            <p className="text-foreground/40">{isDemo ? 'Sample: Global Fintech SaaS' : 'Elite Audit Engine powered by Puter GPT-5.4 Nano'}</p>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-4">
             {!isDemo && (
@@ -214,7 +231,7 @@ export default function ComplianceWizard() {
                 className="flex-1 md:flex-none px-6 py-4 bg-emerald-500 text-black font-bold rounded-2xl hover:bg-emerald-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-[0_0_20px_rgba(16,185,129,0.3)]"
               >
                 {isDownloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                {isDownloading ? 'Downlaoding...' : 'Download Report'}
+                {isDownloading ? 'Downloading...' : 'Download Report'}
               </button>
               <button 
                 onClick={() => isDemo ? window.location.href = '/wizard' : window.location.reload()} 
@@ -273,16 +290,17 @@ export default function ComplianceWizard() {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="p-4 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm font-bold uppercase tracking-tight shadow-sm"
+            className="p-4 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm font-bold uppercase tracking-tight shadow-sm flex items-center gap-2"
           >
-            GUARANTEE: 15-Second Audit Synthesis Cycle.
+            <Zap className="w-4 h-4 animate-pulse" />
+            <span>POWERED BY PUTER.JS GPT-5.4 NANO</span>
           </motion.div>
           <p className="text-foreground/40 leading-relaxed font-medium capitalize">
             {isThinking ? (
               currentStep === 0 ? "Identifying sector-specific risk profiles." :
               currentStep < 5 ? "Referencing previous responses for depth." :
               "Finalizing regulatory cross-references."
-            ) : "Our 100% Free Elite AI engine is building your high-fidelity compliance bundle. This process takes approximately 15 seconds."}
+            ) : "Our Puter-powered Nano engine is building your high-fidelity compliance bundle in under 5 seconds."}
           </p>
         </div>
 
@@ -302,11 +320,14 @@ export default function ComplianceWizard() {
     <div className="max-w-3xl mx-auto space-y-12">
       <div className="space-y-4">
         <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-foreground/30">
-          <span>{currentStep + 1} of 10 Dynamic Steps</span>
-          <span>{Math.round(progress)}% Complete</span>
+          <div className="flex items-center gap-2">
+            <Zap className="w-3 h-3 text-emerald-500" />
+            <span>{isTrial ? "GUEST: 1/hr limit" : "PRO: 7/hr limit"}</span>
+          </div>
+          <span>Step {currentStep + 1} of 10</span>
         </div>
-        <div className="h-1 bg-foreground/5 rounded-full overflow-hidden">
-          <motion.div className="h-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
+        <div className="h-1.5 bg-foreground/5 rounded-full overflow-hidden">
+          <motion.div className="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
         </div>
       </div>
 

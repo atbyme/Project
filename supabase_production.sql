@@ -1,11 +1,39 @@
 -- ============================================================
--- ComplianceShield AI — Phase 5: Complete Security Lockdown
+-- ComplianceShield AI — Master Commercial Schema (One-Click Pro)
 -- Run this in your Supabase SQL Editor (safe to re-run)
 -- ============================================================
 
 -- ──────────────────────────────────────────────────────────────
+-- 0. SCHEMA PROVISIONING — Full table definitions
+-- ──────────────────────────────────────────────────────────────
+
+-- Ensure compliance_reports exists
+CREATE TABLE IF NOT EXISTS public.compliance_reports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  industry TEXT NOT NULL,
+  jurisdiction TEXT NOT NULL,
+  report_data JSONB NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ip_address TEXT,
+  session_id TEXT
+);
+
+-- Ensure audit_logs exists
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  event_type TEXT NOT NULL,
+  report_title TEXT,
+  user_agent TEXT,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  ip_address TEXT
+);
+
+-- ──────────────────────────────────────────────────────────────
 -- 1. COMPLIANCE REPORTS — Full RLS policy set
 -- ──────────────────────────────────────────────────────────────
+
 
 -- Ensure RLS is enabled
 ALTER TABLE public.compliance_reports ENABLE ROW LEVEL SECURITY;
