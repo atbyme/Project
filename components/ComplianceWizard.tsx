@@ -18,19 +18,13 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// The only static question is the first one to kick off the AI context
-const INITIAL_QUESTION = {
-  id: 'industry',
-  title: 'What industry are you in?',
-  description: 'We tailor the dynamic AI logic to your specific sector.',
-  options: ['Healthcare / Medical', 'Software / SaaS', 'Legal / Professional Services', 'Finance / Fintech', 'E-commerce', 'Other']
-};
-
+// The AI completely decides the starting point now, no hardcoded questions.
 export default function ComplianceWizard() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [questionHistory, setQuestionHistory] = useState<any[]>([INITIAL_QUESTION]);
-  const [currentQuestion, setCurrentQuestion] = useState<any>(INITIAL_QUESTION);
+  const [questionHistory, setQuestionHistory] = useState<any[]>([]);
+  const [currentQuestion, setCurrentQuestion] = useState<any>(null);
   const [answers, setAnswers] = useState<Record<string, any>>({});
+  const initialFetchDone = useRef(false);
 
   const [isThinking, setIsThinking] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -72,12 +66,40 @@ export default function ComplianceWizard() {
       if (typeof window !== 'undefined' && window.puter) {
         const isSignedIn = await window.puter.auth.isSignedIn();
         if (!isSignedIn) {
-          // If not signed in, show a clearer notice or prompt
           console.log("Puter not signed in. AI calls will trigger a redirect.");
         }
       }
     };
     checkPuter();
+
+    // 4. Fetch the VERY FIRST question dynamically from AI Engine
+    const fetchFirstQuestion = async () => {
+      if (initialFetchDone.current) return;
+      initialFetchDone.current = true;
+      setIsThinking(true);
+      try {
+        const result: any = await generateNextQuestion({}, 0);
+        if (result.success && result.data) {
+          setQuestionHistory([result.data]);
+          setCurrentQuestion(result.data);
+        } else {
+          throw new Error("Failed to initialize.");
+        }
+      } catch (err) {
+        // Safe fallback if the first network request fails
+        const fallback = {
+          id: 'initial_fallback',
+          title: "What is your primary operating sector?",
+          description: "Our AI will tailor the rest of the audit based on this foundational answer.",
+          options: ["Technology / SaaS", "Healthcare / Medical", "Finance / Fintech", "E-Commerce / Retail"]
+        };
+        setQuestionHistory([fallback]);
+        setCurrentQuestion(fallback);
+      } finally {
+        setIsThinking(false);
+      }
+    };
+    fetchFirstQuestion();
 
   }, []);
 
@@ -340,35 +362,35 @@ export default function ComplianceWizard() {
 
       <AnimatePresence mode="wait">
         <motion.div key={currentStep} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
-          <div className="space-y-4">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">{currentQuestion.title}</h2>
-            <p className="text-xl text-foreground/40 flex items-center gap-2">
-              <Info className="w-5 h-5 text-emerald-500/40" />
-              {currentQuestion.description}
-            </p>
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="p-4 bg-emerald-500/5 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm italic shadow-[0_0_15px_rgba(16,185,129,0.1)]"
-            >
+          {currentQuestion && (
+            <div className="space-y-4">
+              <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight">{currentQuestion.title}</h2>
+              <p className="text-xl text-foreground/40 flex items-center gap-2">
+                <Info className="w-5 h-5 text-emerald-500/40" />
+                {currentQuestion.description}
+              </p>
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-4 bg-emerald-500/5 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm italic shadow-[0_0_15px_rgba(16,185,129,0.1)]"
+              >
+                {currentStep === 0 && (
+                  <div className="space-y-1">
+                    <p>Step 1: Foundational Analysis. Our AI adapts entirely based on this primary vector.</p>
+                    <p className="text-[10px] uppercase tracking-widest opacity-60">Performance Guarantee: 15-Second Full Audit Synthesis.</p>
+                  </div>
+                )}
+                {currentStep > 0 && currentStep < 5 && "Great progress! You're building a solid foundation for your legal audit."}
+                {currentStep >= 5 && currentStep < 9 && "Almost there. These final details are what differentiate a good report from an expert one."}
+                {currentStep === 9 && "Final step! Our engine is ready to synthesize your custom 2026 Table of Contents."}
+              </motion.div>
+            </div>
+          )}
 
-              {currentStep === 0 && (
-                <div className="space-y-1">
-                  <p>Step 1: Selecting your industry allows our AI to target the exact GDPR/Compliance Articles that apply to you.</p>
-                  <p className="text-[10px] uppercase tracking-widest opacity-60">Performance Guarantee: 15-Second Full Audit Synthesis.</p>
-                </div>
-              )}
-
-              {currentStep > 0 && currentStep < 5 && "Great progress! You're building a solid foundation for your legal audit."}
-              {currentStep >= 5 && currentStep < 9 && "Almost there. These final details are what differentiate a good report from an expert one."}
-              {currentStep === 9 && "Final step! Our engine is ready to synthesize your custom 2026 Table of Contents."}
-            </motion.div>
-
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {currentQuestion.options.map((option: string, idx: number) => {
-              const isSelected = answers[currentQuestion.id] === option;
+          {currentQuestion && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {currentQuestion.options.map((option: string, idx: number) => {
+                const isSelected = answers[currentQuestion.id] === option;
               return (
                 <motion.button
                   key={option}
@@ -392,7 +414,8 @@ export default function ComplianceWizard() {
                 </motion.button>
               );
             })}
-          </div>
+            </div>
+          )}
 
         </motion.div>
       </AnimatePresence>
@@ -414,7 +437,7 @@ export default function ComplianceWizard() {
         <div className={cn("ml-auto", currentStep === 0 && "w-full flex justify-end")}>
           <button
             onClick={next}
-            disabled={!answers[currentQuestion.id] || isThinking}
+            disabled={!currentQuestion || !answers[currentQuestion.id] || isThinking}
             className="px-10 py-5 bg-emerald-500 text-black font-extrabold rounded-2xl hover:bg-emerald-400 disabled:opacity-30 flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
           >
             {currentStep === 9 ? 'Generate Report' : 'Continue'}

@@ -35,9 +35,12 @@ export async function generateNextQuestion(previousAnswers: Record<string, any>,
       OBJECTIVE: Formulate the EXACT NEXT logical question for Step ${stepCount + 1} of 10.
       
       STRICT RULES FOR DYNAMIC UNIQUENESS:
-      1. ANALYZE the 'PREVIOUS DISCOVERIES'. Your new question MUST logically follow the very last selection the user made to drill deeper into their specific risk profile.
-      2. NEVER ask a generic question. NEVER repeat a topic or concept that has already been addressed.
-      3. Branch out dynamically. If they chose "AWS", ask about cloud security posture. If they chose "Healthcare", ask about patient data handling.
+      ${stepCount === 0 ? 
+        '1. This is the FIRST question of the audit. Ask a vital foundational question (e.g., about their primary Industry, Company Size, or Core Business Model). Make the options cover a wide range of common profiles.' : 
+        "1. ANALYZE the 'PREVIOUS DISCOVERIES'. Your new question MUST logically follow the very last selection the user made to drill deeper into their specific risk profile."
+      }
+      2. NEVER ask a generic or duplicate question.
+      3. Branch out dynamically. For example, if they previously chose "AWS", ask about cloud security posture. If they chose "Healthcare", ask about patient data.
       4. FORMAT: TITLE must be under 12 words. DESCRIPTION must be under 20 words.
       5. Options must be mutually exclusive and represent different maturity levels.
 
