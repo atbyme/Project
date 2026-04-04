@@ -21,6 +21,8 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const VERCEL_URL = 'https://complainceai-pi.vercel.app';
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -37,7 +39,7 @@ export default function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+          options: { emailRedirectTo: `${VERCEL_URL}/auth/callback` },
 
         });
         if (error) throw error;
@@ -57,7 +59,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { 
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${VERCEL_URL}/auth/callback`,
 
           queryParams: {
             access_type: 'offline',

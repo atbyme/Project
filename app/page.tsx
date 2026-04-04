@@ -2,11 +2,22 @@ import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText, Sparkles, AlertT
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { createClient } from '@/lib/server';
+import { redirect } from 'next/navigation';
 import React from 'react';
 
 
-export default async function LandingPage() {
+export default async function LandingPage(props: { searchParams: Promise<{ code?: string; next?: string }> }) {
   const supabase = await createClient();
+  const searchParams = await props.searchParams;
+
+  // Handle OAuth callback code on homepage
+  if (searchParams?.code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(searchParams.code);
+    if (!error) {
+      redirect('/dashboard');
+    }
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
