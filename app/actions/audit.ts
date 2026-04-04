@@ -4,46 +4,47 @@ import { headers } from 'next/headers';
 import { createClient } from '@/lib/server';
 
 /**
- * Log Report Download (The Security Audit Log)
- * Captures device history, IP, and user identity for full traceability.
+ * Log Report Download
+ * Captures device, IP, and user identity for audit traceability.
  * Backed by Supabase audit_logs table with RLS.
  */
 export async function logReportDownload(reportTitle: string) {
   try {
+    // Validate and sanitize input
+    if (!reportTitle || typeof reportTitle !== 'string') {
+      return { success: false };
+    }
+
+    const sanitizedTitle = reportTitle.trim().slice(0, 200);
+
     const headersList = await headers();
-    const userAgent = headersList.get('user-agent') || 'Unknown Device';
+    const userAgent = (headersList.get('user-agent') || 'Unknown Device').slice(0, 500);
     const forwardedFor = headersList.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0] : 'localhost';
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
 
     const supabase = await createClient();
-
-    // Get current user if logged in
     const { data: { user } } = await supabase.auth.getUser();
 
     const logEntry = {
       action: 'PDF_DOWNLOAD',
-      report: reportTitle,
+      report: sanitizedTitle,
       device: userAgent,
       ip_v4: ip,
       status: 'SUCCESS',
       user_id: user?.id ?? null,
     };
 
-    console.log(`[AUDIT-LOG] ${ip} | ${user?.email || 'anon'} | ${reportTitle}`);
-
     const { error } = await supabase
       .from('audit_logs')
       .insert([logEntry]);
 
     if (error) {
-      console.error('Supabase Audit Log Error:', JSON.stringify(error, null, 2));
-      // Graceful fallback — don't block the download
+      // Graceful fallback - don't block the download
       return { success: true, log: logEntry };
     }
 
     return { success: true, log: logEntry };
-  } catch (error) {
-    console.error('Audit Log Error:', error);
+  } catch {
     return { success: false };
   }
 }

@@ -6,89 +6,107 @@ import { checkBotScore } from '@/lib/bot-protection';
 import { headers } from 'next/headers';
 import { createClient } from '@/lib/server';
 
+// Strict input validation schema
+const AnswersSchema = z.object({}).passthrough().refine(
+  (data) => Object.keys(data).length > 0 && Object.keys(data).length <= 20,
+  'Answers must have between 1 and 20 fields'
+);
+
+const ReportContentSchema = z.string().min(100).max(50000);
+
 /**
- * generateComplianceReport
- * AI generation happens CLIENT-SIDE via puter.js (window.puter.ai.chat).
- * This server action only handles: bot check, rate limiting, and DB insert.
- * @param rawAnswers  - The wizard answers
- * @param preGeneratedReport - The report already generated client-side by puter.js
+ * Generate and save a compliance report.
+ * 
+ * Rate limits:
+ * - Unsigned users: 1 report per hour (tracked by IP)
+ * - Signed-in users: 7 reports per hour (tracked by userId)
  */
-export async function generateComplianceReport(rawAnswers: any, preGeneratedReport?: string) {
+export async function generateComplianceReport(rawAnswers: unknown, preGeneratedReport?: string) {
   try {
-    // ── Bot Protection ────────────────────────────────────────────────
+    // Bot protection check
     const botCheck = await checkBotScore();
     if (botCheck.isBot) {
       return { success: false, error: 'Access denied: automated request detected.' };
     }
 
-    // ── Rate Limiting ─────────────────────────────────────────────────
+    // Validate input before processing
+    const answersResult = AnswersSchema.safeParse(rawAnswers);
+    if (!answersResult.success) {
+      return { success: false, error: 'Invalid questionnaire data.' };
+    }
+
+    const answers = answersResult.data;
+
+    // Validate report content
+    if (!preGeneratedReport || typeof preGeneratedReport !== 'string') {
+      return { success: false, error: 'No report content received.' };
+    }
+
+    const reportResult = ReportContentSchema.safeParse(preGeneratedReport);
+    if (!reportResult.success) {
+      return { success: false, error: 'Report content is invalid.' };
+    }
+
+    // Get client identity
     const headersList = await headers();
     const forwardedFor = headersList.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'localhost';
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    // Rate limit key: use userId for signed-in, IP for anonymous
+    const rateLimitKey = user ? `user:${user.id}` : `ip:${ip}`;
     const limit = user ? 7 : 1;
-    const limitStatus = await checkRateLimit(ip, limit);
+
+    const limitStatus = await checkRateLimit(rateLimitKey, limit);
 
     if (!limitStatus.success) {
       return {
         success: false,
         error: user
-          ? 'Professional limit reached: 7 reports/hour. Please try again shortly.'
-          : 'Trial limit reached: 1 report/hour. Sign in for higher limits (7/hour).',
+          ? 'Report limit reached: 7 reports per hour. Please try again shortly.'
+          : 'Trial limit reached: 1 report per hour. Sign in for 7 reports per hour.',
       };
     }
 
-    // ── Validate input ────────────────────────────────────────────────
-    const ComplianceSchema = z.record(z.string(), z.unknown());
-    const result = ComplianceSchema.safeParse(rawAnswers);
-    if (!result.success) {
-      return { success: false, error: 'Invalid data. Please complete the questionnaire.' };
-    }
-
-    const answers = result.data;
-    const industry = answers.industry || 'General Business';
+    // Sanitize industry field
+    const industry = String(answers.industry || 'General Business').slice(0, 100);
     const seed = Math.random().toString(36).substring(2, 9);
+    const userAgent = (headersList.get('user-agent') || 'Unknown').slice(0, 500);
 
-    // ── Use the pre-generated report from client-side puter.js ────────
-    const finalReport = preGeneratedReport;
-    if (!finalReport || finalReport.trim().length === 0) {
-      return { success: false, error: 'No report content received. Please try again.' };
-    }
-
-    // ── Persist to Supabase ───────────────────────────────────────────
-    const userAgent = headersList.get('user-agent') || 'Unknown';
-
+    // Persist to Supabase
     const { error: dbError } = await supabase.from('compliance_reports').insert([{
-      report_content: finalReport,
-      ip_address:     ip,
-      user_agent:     userAgent,
-      industry:       industry,
-      user_id:        user?.id ?? null,
+      report_content: reportResult.data,
+      ip_address: ip,
+      user_agent: userAgent,
+      industry: industry,
+      user_id: user?.id ?? null,
     }]);
 
     if (dbError) {
-      console.error('DB Insert Error (non-fatal):', JSON.stringify(dbError, null, 2));
+      console.error('DB Insert Error:', dbError.message);
+      return {
+        success: false,
+        error: 'Failed to save report. Please try again.',
+      };
     }
 
     return {
       success: true,
-      data: finalReport,
+      data: reportResult.data,
       meta: {
-        model:     'ComplianceShield AI (Puter.js)',
+        model: 'ComplianceShield AI',
         reference: `CS-${seed.toUpperCase()}`,
         industry,
-        secure:    true,
+        secure: true,
       },
     };
 
-  } catch (error: any) {
-    console.error('Compliance Engine Error:', error);
+  } catch {
     return {
       success: false,
-      error: `Save failed: ${error.message || 'Unexpected error. Please try again.'}`,
+      error: 'An unexpected error occurred. Please try again.',
     };
   }
 }

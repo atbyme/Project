@@ -3,29 +3,40 @@
 import { createClient } from '@/lib/server';
 import { revalidatePath } from 'next/cache';
 
+/**
+ * Delete a compliance report.
+ * Only the report owner can delete it (enforced at app level + Supabase RLS).
+ */
 export async function deleteReport(reportId: string) {
   try {
-    const supabase = await createClient();
-    
-    // Auth Check
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized. Please log in.");
+    // Validate input - must be a valid UUID format
+    if (!reportId || typeof reportId !== 'string' || reportId.length > 100) {
+      return { success: false, error: 'Invalid report ID.' };
+    }
 
-    // Secure Delete (RLS will also prevent deleting others' reports)
+    const supabase = await createClient();
+
+    // Auth check
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Unauthorized.' };
+    }
+
+    // Delete (RLS also prevents deleting others' reports)
     const { error } = await supabase
       .from('compliance_reports')
       .delete()
       .eq('id', reportId)
       .eq('user_id', user.id);
 
-    if (error) throw error;
+    if (error) {
+      return { success: false, error: 'Failed to delete report.' };
+    }
 
-    // Refresh Dashboard
     revalidatePath('/dashboard');
     return { success: true };
 
-  } catch (error: any) {
-    console.error('Delete Action Error:', error);
-    return { success: false, error: error.message };
+  } catch {
+    return { success: false, error: 'An unexpected error occurred.' };
   }
 }

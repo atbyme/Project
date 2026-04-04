@@ -4,19 +4,43 @@ import { checkBotScore } from '@/lib/bot-protection';
 
 /**
  * Generate Next Dynamic Question
- * Returns fallback questions (AI generation happens client-side via Puter.js).
+ * Returns a fallback question from the local bank.
+ * AI question generation happens client-side.
+ * 
+ * Validates input to prevent abuse.
  */
 export async function generateNextQuestion(
-  previousAnswers: Record<string, any>,
-  stepCount: number
+  previousAnswers: unknown,
+  stepCount: unknown
 ) {
-  await checkBotScore();
-  return handleFallback(stepCount, previousAnswers.industry || 'General Business');
+  try {
+    // Bot protection
+    const botCheck = await checkBotScore();
+    if (botCheck.isBot) {
+      return { success: false, error: 'Access denied.' };
+    }
+
+    // Validate inputs
+    const step = typeof stepCount === 'number' && Number.isInteger(stepCount) && stepCount >= 0 && stepCount <= 20
+      ? stepCount
+      : 0;
+
+    const answers = typeof previousAnswers === 'object' && previousAnswers !== null
+      ? previousAnswers as Record<string, unknown>
+      : {};
+
+    const industry = typeof answers.industry === 'string'
+      ? answers.industry.slice(0, 100)
+      : 'General Business';
+
+    return handleFallback(step, industry);
+  } catch {
+    return handleFallback(0, 'General Business');
+  }
 }
 
 /**
- * LOCAL CIRCUIT BREAKER
- * Expert question bank used when AI is unavailable.
+ * Local question bank used as fallback when AI is unavailable.
  */
 function handleFallback(stepCount: number, industry: string = 'General Business') {
   const bank: Record<number, { title: string; description: string; options: string[] }> = {

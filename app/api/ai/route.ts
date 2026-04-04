@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const GROQ_KEYS = (process.env.GROQ_API_KEYS || '')
   .split(',')
@@ -27,8 +28,10 @@ function getNextModel(): string {
   return model;
 }
 
-async function tryGroq(prompt: string, maxAttempts: number = GROQ_KEYS.length * GROQ_MODELS.length): Promise<string | null> {
+async function tryGroq(prompt: string, maxTokens: number = 4096, timeoutMs: number = 30000): Promise<string | null> {
   if (GROQ_KEYS.length === 0) return null;
+
+  const maxAttempts = GROQ_KEYS.length * GROQ_MODELS.length;
 
   for (let i = 0; i < maxAttempts; i++) {
     const key = getNextGroqKey();
@@ -45,74 +48,95 @@ async function tryGroq(prompt: string, maxAttempts: number = GROQ_KEYS.length * 
         body: JSON.stringify({
           model,
           messages: [{ role: 'user', content: prompt }],
-          temperature: 0.8,
-          max_tokens: 1024,
+          temperature: 0.7,
+          max_tokens: maxTokens,
         }),
-        signal: AbortSignal.timeout(8000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
 
       if (res.ok) {
         const data = await res.json();
         const text = data.choices?.[0]?.message?.content;
         if (text && text.trim().length > 0) {
-          console.log(`[AI] Groq success (model: ${model})`);
           return text;
         }
-      } else {
-        const errData = await res.json().catch(() => ({}));
-        console.warn(`[AI] Groq key rotated (${res.status}): ${errData.error?.message || 'unknown'}`);
       }
-    } catch (err: any) {
-      console.warn(`[AI] Groq error, rotating key: ${err.message}`);
+    } catch {
+      // Rotate to next key on error
     }
   }
 
   return null;
 }
 
-async function tryPollinations(prompt: string): Promise<string | null> {
+async function tryPollinations(prompt: string, timeoutMs: number = 30000): Promise<string | null> {
   try {
     const encodedPrompt = encodeURIComponent(prompt);
     const res = await fetch(`https://text.pollinations.ai/${encodedPrompt}?model=openai&json=true`, {
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
 
-    if (!res.ok) {
-      console.warn(`[AI] Pollinations failed (${res.status})`);
-      return null;
-    }
+    if (!res.ok) return null;
 
     const text = await res.text();
     if (!text || text.trim().length === 0) return null;
 
-    console.log('[AI] Pollinations success');
     return text;
-  } catch (err: any) {
-    console.warn(`[AI] Pollinations error: ${err.message}`);
+  } catch {
     return null;
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const { prompt, model } = await request.json();
+    // Rate limit: 30 AI calls per minute per IP
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
+    const rateLimitKey = `ai:${ip}`;
 
-    // 1st: Try Groq (fast, 1-2s) with multi-key rotation
-    const groqResult = await tryGroq(prompt);
+    const limitStatus = await checkRateLimit(rateLimitKey, 30);
+    if (!limitStatus.success) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please wait a moment.' },
+        { status: 429 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Validate input
+    const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+    if (!prompt || prompt.length > 5000) {
+      return NextResponse.json(
+        { error: 'Invalid request. Prompt is required (max 5000 characters).' },
+        { status: 400 }
+      );
+    }
+
+    const isReport = body.isReport === true;
+    const maxTokens = isReport ? 4096 : 1024;
+    const timeoutMs = isReport ? 45000 : 15000;
+
+    // Try Groq first (fast)
+    const groqResult = await tryGroq(prompt, maxTokens, timeoutMs);
     if (groqResult) {
       return NextResponse.json({ text: groqResult, source: 'groq' });
     }
 
-    console.log('[AI] All Groq keys exhausted, falling back to Pollinations...');
-
-    // 2nd: Fallback to Pollinations (free, unlimited, slower)
-    const pollResult = await tryPollinations(prompt);
+    // Fallback to Pollinations (unlimited, slower)
+    const pollResult = await tryPollinations(prompt, timeoutMs);
     if (pollResult) {
       return NextResponse.json({ text: pollResult, source: 'pollinations' });
     }
 
-    return NextResponse.json({ error: 'All AI providers failed' }, { status: 500 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Service temporarily unavailable. Please try again.' },
+      { status: 503 }
+    );
+  } catch {
+    return NextResponse.json(
+      { error: 'An unexpected error occurred.' },
+      { status: 500 }
+    );
   }
 }

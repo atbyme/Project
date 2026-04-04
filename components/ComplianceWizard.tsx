@@ -41,34 +41,41 @@ const INITIAL_QUESTION = {
 
 // ── AI helpers (Pollinations — free, no sign-in) ────────────────────────
 
-async function puterChat(prompt: string, model = 'gpt-4o-mini'): Promise<string> {
-  const result = await callPuterAI(prompt, model);
+async function puterChat(prompt: string, model = 'gpt-4o-mini', isReport = false): Promise<string> {
+  const result = await callPuterAI(prompt, model, isReport);
   return result ?? '';
 }
 
 async function generateQuestionWithPuter(answers: Record<string, any>, stepCount: number): Promise<any> {
   const industry = answers.industry || 'General Business';
   const uid = `${stepCount}_${Date.now().toString(36)}`;
+  const currentYear = new Date().getFullYear();
 
   const answeredSoFar = Object.entries(answers)
     .filter(([k, v]) => v && k !== 'step')
     .map(([q, a]) => `Q: ${q} → A: ${a}`)
     .join('\n');
 
-  const prompt = `You are an elite compliance auditor for ${industry} companies.
+  const prompt = `You are a world-class compliance auditor recognized by the International Association of Privacy Professionals (IAPP) and the American Institute of CPAs (AICPA). You audit ${industry} companies against global standards.
 
-Previous answers in this audit:
-${answeredSoFar || 'This is the first question.'}
+Current audit session — step ${stepCount + 1} of 10.
 
-Generate a UNIQUE compliance question for step ${stepCount + 1} of 10. Rules:
-1. NEVER repeat any topic from previous answers
-2. Ask about real compliance practices (encryption, access control, data retention, incident response, vendor management, audit trails, employee training, disaster recovery, etc.)
-3. Each option must be SPECIFIC and REALISTIC — show different maturity levels
-4. Options must be detailed enough to be meaningful (not just "Option A")
-5. Make the question valuable and relevant to their industry
+User's previous answers:
+${answeredSoFar || 'No previous answers yet — this is the first question.'}
 
-Return ONLY raw JSON, no markdown, no code blocks:
-{"id":"q_${uid}","title":"Specific compliance question under 15 words?","description":"Why this matters in under 20 words","options":["Specific realistic option describing a real practice","Another specific option with different maturity level","Third realistic compliance practice option","Fourth option showing a different approach"]}`;
+Your task: Generate the NEXT compliance question that directly follows from what the user has already told you. If they said they use AES-256 encryption, ask about key management. If they said they have no incident response plan, ask about breach notification procedures. Every question must logically chain from their previous answers.
+
+Rules:
+1. NEVER repeat a topic they already answered
+2. Build on their specific answers — reference their choices naturally
+3. Ask about real operational practices, not theoretical knowledge
+4. Each option must describe a concrete, realistic practice with enough detail that a compliance officer can immediately identify their current state
+5. Options should span from immature to mature compliance postures
+6. Reference specific regulations when relevant (GDPR Art. 32, HIPAA 45 CFR 164.308, etc.)
+7. Make this question genuinely useful — something a real auditor would ask
+
+Return ONLY raw JSON, no markdown, no code blocks, no explanation:
+{"id":"q_${uid}","title":"Clear compliance question under 15 words?","description":"Why this matters under current ${currentYear} law in under 20 words","options":["Detailed option describing a mature compliance practice","Detailed option describing a moderate compliance practice","Detailed option describing a basic compliance practice","Detailed option describing a non-compliant state"]}`;
 
   const text = await puterChat(prompt, 'gpt-4o-mini');
 
@@ -87,42 +94,112 @@ async function generateReportWithPuter(answers: Record<string, any>): Promise<st
     .filter(([k]) => k !== 'step')
     .map(([q, a]) => `- ${q}: ${a}`)
     .join('\n');
+  const currentYear = new Date().getFullYear();
+  const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const prompt = `You are a senior compliance consultant at a Big 4 firm. Write a professional, pitch-ready compliance audit report for a ${industry} company.
+  const prompt = `You are a globally recognized compliance auditor. Write a concise, board-ready audit report for a ${industry} company. Every word must add value. No filler.
 
-AUDIT RESPONSES:
+AUDIT DATA:
 ${selections}
 
-REQUIRED FORMAT (clean Markdown, professional tone, concise):
+Output this exact structure with proper markdown formatting:
 
-# Compliance Audit Report: ${industry} Sector
+# Compliance Audit Report: ${industry}
+
+**Date:** ${currentDate}
+
+**Framework:** Global Standards ${currentYear}
+
+**Risk Rating:** [Low/Medium/High/Critical]
+
+**Score:** [0-100]/100
+
+---
+
+## Table of Contents
+
+1. Executive Summary
+2. Regulatory Framework
+3. Risk Assessment
+4. Compliance Scorecard
+5. Mitigation Roadmap
+6. Summary
+
+---
 
 ## 1. Executive Summary
-A brief overview of the audit scope, key findings, and overall risk rating (Low/Medium/High/Critical).
+
+3-4 paragraphs: scope, key findings, risk posture, critical gaps, immediate priorities, strategic outlook. Be specific to this industry.
+
+---
 
 ## 2. Regulatory Framework
-List the specific regulations and standards applicable to this sector (GDPR, HIPAA, SOC 2, etc.) with brief explanations.
 
-## 3. Risk Assessment & Findings
-For each answer provided, assess the risk level and provide findings. Use **bold** for key terms. Format:
-- **Area**: Finding description
-- **Risk Level**: Low/Medium/High/Critical
+List applicable regulations with specific articles:
+
+- **GDPR** (EU 2016/679): Articles 5, 6, 17, 25, 32, 33, 35
+- **HIPAA**: Privacy Rule, Security Rule (45 CFR 164), Breach Notification
+- **SOC 2 Type II**: Security, Availability, Confidentiality, Privacy
+- **CCPA/CPRA**: Consumer rights, data security requirements
+- **NIST CSF 2.0**: Identify, Protect, Detect, Respond, Recover
+- **ISO 27001:2022**: Annex A controls
+- Industry-specific regulations for ${industry}
+
+---
+
+## 3. Risk Assessment
+
+For each answer, write:
+
+### [Area Name]
+
+- **Finding:** Current state assessment
+- **Risk:** Low/Medium/High/Critical
+- **Regulation:** Specific law and article
+- **Impact:** Consequence of non-compliance
+- **Action:** Specific improvement step
+
+---
 
 ## 4. Compliance Scorecard
-Create a quick scorecard table showing each area and its compliance status (Compliant/Partial/Non-Compliant).
+
+| # | Area | Regulation | Status | Risk | Priority |
+|---|------|-----------|--------|------|----------|
+| 1 | [Name] | [Law] | [Compliant/Partial/Non-Compliant] | [Level] | [P1/P2/P3] |
+
+Add summary: Compliant: X, Partial: X, Non-Compliant: X. Overall: X%.
+
+---
 
 ## 5. Mitigation Roadmap
-Prioritized action items with timelines:
-- **Immediate (0-30 days)**: Critical fixes
-- **Short-term (30-90 days)**: Important improvements
-- **Long-term (90+ days)**: Strategic enhancements
 
-## 6. Summary & Next Steps
-A concise closing summary with the top 3 recommendations and a clear call to action for the client.
+**Immediate (0-30 days):** 3-4 critical fixes with regulation citations.
 
-Rules: Be specific to the answers. Use authoritative, board-ready language. Keep it concise and actionable. No filler content.`;
+**Short-Term (30-90 days):** 3-4 improvements with regulation citations.
 
-  const report = await puterChat(prompt, 'gpt-4o-mini');
+**Long-Term (90+ days):** 3-4 strategic enhancements with regulation citations.
+
+---
+
+## 6. Summary
+
+**Key Takeaways:** 4-6 bullets of critical findings.
+
+**Top 3 Priorities:**
+
+1. [Most critical with regulation reference]
+2. [Second critical]
+3. [Third critical]
+
+**Regulatory Deadlines:** Upcoming deadlines and milestones.
+
+**Final Assessment:** 2 paragraphs with clear call to action.
+
+---
+
+Rules: Be specific to answers. Cite ${currentYear} regulations with article numbers. Board-ready language. Complete report. No truncation. Use proper markdown spacing between all elements.`;
+
+  const report = await puterChat(prompt, 'gpt-4o-mini', true);
   if (!report || report.trim().length < 50) throw new Error('Report generation failed');
   return report;
 }
@@ -130,7 +207,7 @@ Rules: Be specific to the answers. Use authoritative, board-ready language. Keep
 // ─────────────────────────────────────────────────────────────────────────
 
 export default function ComplianceWizard() {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [currentStep, setCurrentStep] = useState<number>(0);
   const [questionHistory, setQuestionHistory] = useState<any[]>([INITIAL_QUESTION]);
   const [currentQuestion, setCurrentQuestion] = useState<any>(INITIAL_QUESTION);
   const [answers, setAnswers] = useState<Record<string, any>>({});
@@ -140,36 +217,14 @@ export default function ComplianceWizard() {
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isTrial, setIsTrial] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(true);
   const reportRef = useRef<HTMLDivElement>(null);
 
-  // ── Persist wizard state across refreshes ──────────────────────────
+  // Restore session from sessionStorage after hydration
   useEffect(() => {
-    if (currentQuestion && questionHistory.length > 0) {
-      sessionStorage.setItem('wizard_state', JSON.stringify({
-        currentStep, questionHistory, currentQuestion, answers, timestamp: Date.now()
-      }));
-    }
-  }, [currentStep, questionHistory, currentQuestion, answers]);
-
-  useEffect(() => {
-    // 1. Demo mode
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('demo') === 'true') {
-      import('@/lib/demo-data').then(mod => setReport(mod.DEMO_REPORT));
-    }
-
-    // 2. Trial mode detection
-    import('@/lib/client').then(mod => {
-      const supabase = mod.createClient();
-      if (supabase.auth) {
-        supabase.auth.getUser().then((res: any) => setIsTrial(!res.data?.user));
-      }
-    });
-
-    // 3. Restore session
-    const savedStr = sessionStorage.getItem('wizard_state');
-    if (savedStr) {
-      try {
+    try {
+      const savedStr = sessionStorage.getItem('wizard_state');
+      if (savedStr) {
         const saved = JSON.parse(savedStr);
         if (Date.now() - saved.timestamp < 2 * 60 * 60 * 1000) {
           setCurrentStep(saved.currentStep);
@@ -179,8 +234,34 @@ export default function ComplianceWizard() {
         } else {
           sessionStorage.removeItem('wizard_state');
         }
-      } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+    setIsRestoring(false);
+  }, []);
+
+  // Persist wizard state on every change
+  useEffect(() => {
+    if (!isRestoring && currentQuestion && questionHistory.length > 0) {
+      sessionStorage.setItem('wizard_state', JSON.stringify({
+        currentStep, questionHistory, currentQuestion, answers, timestamp: Date.now()
+      }));
     }
+  }, [currentStep, questionHistory, currentQuestion, answers, isRestoring]);
+
+  useEffect(() => {
+    // Demo mode
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('demo') === 'true') {
+      import('@/lib/demo-data').then(mod => setReport(mod.DEMO_REPORT));
+    }
+
+    // Trial mode detection
+    import('@/lib/client').then(mod => {
+      const supabase = mod.createClient();
+      if (supabase.auth) {
+        supabase.auth.getUser().then((res: any) => setIsTrial(!res.data?.user));
+      }
+    });
   }, []);
 
   const handleSelect = (option: string) => {

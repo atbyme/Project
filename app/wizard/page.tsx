@@ -1,5 +1,6 @@
 import React from 'react';
 import ComplianceWizard from '@/components/ComplianceWizard';
+import { WizardErrorBoundary } from '@/components/WizardErrorBoundary';
 import { Shield } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -35,8 +36,10 @@ export default function WizardPage() {
           </div>
         </div>
 
-        {/* Wizard Content */}
-        <ComplianceWizard />
+        {/* Wizard Content with Error Boundary */}
+        <WizardErrorBoundary>
+          <ComplianceWizard />
+        </WizardErrorBoundary>
       </div>
     </div>
   );
