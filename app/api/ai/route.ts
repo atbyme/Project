@@ -6,14 +6,10 @@ const GROQ_KEYS = (process.env.GROQ_API_KEYS || '')
   .map(k => k.trim())
   .filter(k => k.length > 0 && k !== 'gsk_your_key_here');
 
-const GROQ_MODELS = [
-  'llama-3.3-70b-versatile',
-  'llama-3.1-8b-instant',
-  'mixtral-8x7b-32768',
-];
+// Use the fastest model by default
+const DEFAULT_MODEL = 'llama-3.1-8b-instant';
 
 let keyIndex = 0;
-let modelIndex = 0;
 
 function getNextGroqKey(): string | null {
   if (GROQ_KEYS.length === 0) return null;
@@ -22,21 +18,13 @@ function getNextGroqKey(): string | null {
   return key;
 }
 
-function getNextModel(): string {
-  const model = GROQ_MODELS[modelIndex % GROQ_MODELS.length];
-  modelIndex++;
-  return model;
-}
-
-async function tryGroq(prompt: string, maxTokens: number = 4096, timeoutMs: number = 30000): Promise<string | null> {
+async function tryGroq(prompt: string, maxTokens: number, timeoutMs: number): Promise<string | null> {
   if (GROQ_KEYS.length === 0) return null;
 
-  const maxAttempts = GROQ_KEYS.length * GROQ_MODELS.length;
-
-  for (let i = 0; i < maxAttempts; i++) {
+  // Try each key once with the fastest model
+  for (let i = 0; i < GROQ_KEYS.length; i++) {
     const key = getNextGroqKey();
-    const model = getNextModel();
-    if (!key) return null;
+    if (!key) break;
 
     try {
       const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -46,7 +34,7 @@ async function tryGroq(prompt: string, maxTokens: number = 4096, timeoutMs: numb
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model,
+          model: DEFAULT_MODEL,
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.7,
           max_tokens: maxTokens,
@@ -60,16 +48,22 @@ async function tryGroq(prompt: string, maxTokens: number = 4096, timeoutMs: numb
         if (text && text.trim().length > 0) {
           return text;
         }
+      } else if (res.status === 429 || res.status >= 500) {
+        // Rate limited or server error - try next key
+        continue;
+      } else {
+        // Other errors - try next key
+        continue;
       }
     } catch {
-      // Rotate to next key on error
+      continue;
     }
   }
 
   return null;
 }
 
-async function tryPollinations(prompt: string, timeoutMs: number = 30000): Promise<string | null> {
+async function tryPollinations(prompt: string, timeoutMs: number): Promise<string | null> {
   try {
     const encodedPrompt = encodeURIComponent(prompt);
     const res = await fetch(`https://text.pollinations.ai/${encodedPrompt}?model=openai&json=true`, {
@@ -89,7 +83,6 @@ async function tryPollinations(prompt: string, timeoutMs: number = 30000): Promi
 
 export async function POST(request: Request) {
   try {
-    // Rate limit: 30 AI calls per minute per IP
     const forwardedFor = request.headers.get('x-forwarded-for');
     const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
     const rateLimitKey = `ai:${ip}`;
@@ -104,26 +97,23 @@ export async function POST(request: Request) {
 
     const body = await request.json();
 
-    // Validate input
     const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
-    if (!prompt || prompt.length > 5000) {
+    if (!prompt || prompt.length > 15000) {
       return NextResponse.json(
-        { error: 'Invalid request. Prompt is required (max 5000 characters).' },
+        { error: 'Invalid request. Prompt is required (max 15000 characters).' },
         { status: 400 }
       );
     }
 
     const isReport = body.isReport === true;
-    const maxTokens = isReport ? 4096 : 1024;
-    const timeoutMs = isReport ? 45000 : 15000;
+    const maxTokens = isReport ? 4096 : 512;
+    const timeoutMs = isReport ? 60000 : 10000;
 
-    // Try Groq first (fast)
     const groqResult = await tryGroq(prompt, maxTokens, timeoutMs);
     if (groqResult) {
       return NextResponse.json({ text: groqResult, source: 'groq' });
     }
 
-    // Fallback to Pollinations (unlimited, slower)
     const pollResult = await tryPollinations(prompt, timeoutMs);
     if (pollResult) {
       return NextResponse.json({ text: pollResult, source: 'pollinations' });

@@ -90,29 +90,41 @@ Return ONLY raw JSON, no markdown, no code blocks, no explanation:
 
 async function generateReportWithPuter(answers: Record<string, any>): Promise<string> {
   const industry = answers.industry || 'General Business';
-  const selections = Object.entries(answers)
-    .filter(([k]) => k !== 'step')
+
+  const cleanAnswers: Record<string, string> = {};
+  for (const [key, value] of Object.entries(answers)) {
+    if (key === 'step' || key.startsWith('q_') || key.startsWith('fallback_') || key === 'industry') continue;
+    cleanAnswers[key] = String(value);
+  }
+  cleanAnswers['Industry'] = industry;
+
+  const selections = Object.entries(cleanAnswers)
     .map(([q, a]) => `- ${q}: ${a}`)
     .join('\n');
+
   const currentYear = new Date().getFullYear();
   const currentDate = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const prompt = `You are a globally recognized compliance auditor. Write a concise, board-ready audit report for a ${industry} company. Every word must add value. No filler.
+  const prompt = `You are a senior compliance auditor with 20+ years of experience conducting regulatory audits for Fortune 500 companies. You hold certifications from IAPP (CIPP/E, CIPM), AICPA (CISA, CPA), and ISO (Lead Auditor). You have conducted audits for the European Data Protection Board, US Department of Health and Human Services, and UK Information Commissioner's Office.
 
-AUDIT DATA:
+APPROACH: Conduct this audit as a real expert would. Analyze each answer against current regulatory requirements. Identify compliance gaps, assess risk severity, and provide actionable remediation guidance. Your analysis must be thorough, specific, and defensible before regulatory authorities.
+
+AUDIT DATA PROVIDED BY THE ORGANIZATION:
 ${selections}
 
-Output this exact structure with proper markdown formatting:
+Produce the complete audit report using this exact structure:
 
 # Compliance Audit Report: ${industry}
 
 **Date:** ${currentDate}
 
-**Framework:** Global Standards ${currentYear}
+**Prepared By:** ComplianceShield AI - Enterprise Compliance Engine
 
-**Risk Rating:** [Low/Medium/High/Critical]
+**Regulatory Framework:** Global Standards ${currentYear}
 
-**Score:** [0-100]/100
+**Overall Risk Rating:** [Low / Medium / High / Critical]
+
+**Compliance Score:** [0-100 out of 100]
 
 ---
 
@@ -120,87 +132,173 @@ Output this exact structure with proper markdown formatting:
 
 1. Executive Summary
 2. Regulatory Framework
-3. Risk Assessment
+3. Risk Assessment and Findings
 4. Compliance Scorecard
 5. Mitigation Roadmap
-6. Summary
+6. Summary and Next Steps
 
 ---
 
 ## 1. Executive Summary
 
-3-4 paragraphs: scope, key findings, risk posture, critical gaps, immediate priorities, strategic outlook. Be specific to this industry.
+Write 4-5 authoritative paragraphs as a senior auditor would present to a board of directors:
+- Audit scope, methodology, and the industry-specific regulatory context
+- Overall compliance posture with specific risk rating justification
+- Key findings overview referencing the organization's actual responses
+- Critical gaps identified and their quantified business impact
+- Immediate priorities and strategic recommendations
+- Forward-looking assessment of compliance trajectory
 
 ---
 
 ## 2. Regulatory Framework
 
-List applicable regulations with specific articles:
+List every applicable regulation for this ${industry} sector with specific article citations and a brief explanation of why each applies to this organization:
 
-- **GDPR** (EU 2016/679): Articles 5, 6, 17, 25, 32, 33, 35
-- **HIPAA**: Privacy Rule, Security Rule (45 CFR 164), Breach Notification
-- **SOC 2 Type II**: Security, Availability, Confidentiality, Privacy
-- **CCPA/CPRA**: Consumer rights, data security requirements
-- **NIST CSF 2.0**: Identify, Protect, Detect, Respond, Recover
-- **ISO 27001:2022**: Annex A controls
-- Industry-specific regulations for ${industry}
+**A. Data Protection and Privacy**
+- **GDPR** (EU 2016/679) - cite specific articles (Art. 5, 6, 17, 25, 32, 33, 35)
+- **CCPA/CPRA** - California Consumer Privacy Act / Privacy Rights Act
+
+**B. Healthcare Data Security**
+- **HIPAA** - Privacy Rule, Security Rule (45 CFR 164), Breach Notification Rule
+
+**C. Audit and Trust Standards**
+- **SOC 2 Type II** - AICPA Trust Services Criteria (Security, Availability, Confidentiality, Privacy)
+
+**D. Cybersecurity Frameworks**
+- **NIST Cybersecurity Framework 2.0** - Identify, Protect, Detect, Respond, Recover
+- **ISO 27001:2022** - Annex A controls relevant to findings
+
+**E. Industry-Specific Regulations**
+- Any additional regulations specific to ${industry}
 
 ---
 
-## 3. Risk Assessment
+## 3. Risk Assessment and Findings
 
-For each answer, write:
+For EACH audit answer provided, write a thorough professional assessment using lettered subsections (A, B, C, etc.):
 
-### [Area Name]
+### A. [First Area Name]
 
-- **Finding:** Current state assessment
-- **Risk:** Low/Medium/High/Critical
-- **Regulation:** Specific law and article
-- **Impact:** Consequence of non-compliance
-- **Action:** Specific improvement step
+**Finding:** Write 2-3 sentences analyzing the organization's current state based on their actual answer. Be specific, detailed, and authoritative.
+
+**Risk Level:** Low / Medium / High / Critical
+
+**Applicable Regulation:** Cite the exact law, article number, and specific requirement
+
+**Business Impact:** Explain the concrete consequences of non-compliance including potential fines, reputational damage, and operational risk
+
+**Recommendation:** Provide a specific, actionable improvement step with implementation guidance
+
+### B. [Second Area Name]
+
+[Same format as above]
+
+Continue with C, D, E, etc. for each assessed area.
 
 ---
 
 ## 4. Compliance Scorecard
 
-| # | Area | Regulation | Status | Risk | Priority |
-|---|------|-----------|--------|------|----------|
-| 1 | [Name] | [Law] | [Compliant/Partial/Non-Compliant] | [Level] | [P1/P2/P3] |
+Present ALL assessed areas as a structured list with clear formatting:
 
-Add summary: Compliant: X, Partial: X, Non-Compliant: X. Overall: X%.
+**A. Data Encryption**
+- Regulation: GDPR Article 32
+- Status: Compliant
+- Risk Level: Low
+- Priority: P3
+
+**B. Incident Response**
+- Regulation: GDPR Article 33
+- Status: Partial
+- Risk Level: Medium
+- Priority: P2
+
+Continue with C, D, E, etc. for each assessed area. Use the exact same format above for EVERY area.
+
+After listing all areas, add:
+
+**Summary:**
+- Compliant: X areas
+- Partial: X areas
+- Non-Compliant: X areas
+- Overall Compliance: X%
 
 ---
 
 ## 5. Mitigation Roadmap
 
-**Immediate (0-30 days):** 3-4 critical fixes with regulation citations.
+### A. Immediate Actions (0-30 days) - Priority 1
+List 3-4 critical fixes. For each, include:
+- **Action:** What needs to be done
+- **Regulation:** Which regulation requires this
+- **Effort:** Estimated time and resources
+- **Impact:** Expected risk reduction
 
-**Short-Term (30-90 days):** 3-4 improvements with regulation citations.
+### B. Short-Term Improvements (30-90 days) - Priority 2
+List 3-4 important improvements. For each, include:
+- **Action:** What needs to be done
+- **Regulation:** Which regulation requires this
+- **Approach:** Implementation strategy
 
-**Long-Term (90+ days):** 3-4 strategic enhancements with regulation citations.
-
----
-
-## 6. Summary
-
-**Key Takeaways:** 4-6 bullets of critical findings.
-
-**Top 3 Priorities:**
-
-1. [Most critical with regulation reference]
-2. [Second critical]
-3. [Third critical]
-
-**Regulatory Deadlines:** Upcoming deadlines and milestones.
-
-**Final Assessment:** 2 paragraphs with clear call to action.
+### C. Long-Term Strategy (90+ days) - Priority 3
+List 3-5 strategic enhancements. For each, include:
+- **Action:** What needs to be done
+- **Regulation:** Which regulation requires this
+- **Business Value:** Long-term benefit
 
 ---
 
-Rules: Be specific to answers. Cite ${currentYear} regulations with article numbers. Board-ready language. Complete report. No truncation. Use proper markdown spacing between all elements.`;
+## 6. Summary and Next Steps
 
-  const report = await puterChat(prompt, 'gpt-4o-mini', true);
-  if (!report || report.trim().length < 50) throw new Error('Report generation failed');
+### A. Key Takeaways
+Write 5-6 specific bullet points summarizing the most critical findings from this audit. Each must reference the organization's actual compliance posture.
+
+### B. Top 3 Priority Recommendations
+1. [Most critical action with specific regulation reference and business justification]
+2. [Second most critical action with regulation reference]
+3. [Third critical action with regulation reference]
+
+### C. Regulatory Deadlines to Watch
+List 3-4 upcoming regulatory deadlines, review dates, or compliance milestones relevant to this industry and jurisdiction.
+
+### D. Final Assessment
+
+Write 3 authoritative paragraphs providing:
+- Overall assessment of the organization's compliance maturity
+- What they are doing well (acknowledge strengths)
+- What must change immediately (address critical gaps)
+- Clear, actionable call to action with timeline expectations
+- Statement that this report reflects current ${currentYear} regulatory standards
+
+---
+
+CRITICAL REQUIREMENTS:
+- Write ALL 6 sections in full detail
+- Do NOT skip or abbreviate any section
+- Do NOT use placeholder text - write actual content
+- Use lettered subsections (A, B, C, D) throughout the report
+- Use bullet points and numbered lists for readability
+- Cite specific regulation article numbers throughout
+- Reference the organization's actual answers in every assessment
+- Use professional, board-ready language throughout
+- This report must meet the standards of global regulators and enterprise auditors
+- Every finding must be specific to the data provided
+- Tables must be properly formatted markdown with each row on a new line
+- Think and write as a real expert auditor would - thorough, precise, and authoritative`;
+
+  let report = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    report = await puterChat(prompt, 'gpt-4o-mini', true);
+    if (report && report.trim().length > 500 && report.includes('Summary') && report.includes('Mitigation') && report.includes('Executive')) break;
+    report = '';
+    if (attempt < 2) await new Promise(r => setTimeout(r, 1500));
+  }
+
+  if (!report || report.trim().length < 500) {
+    throw new Error('Report generation failed. Please try again.');
+  }
+
   return report;
 }
 
@@ -268,7 +366,6 @@ export default function ComplianceWizard() {
     if (currentQuestion) {
       setAnswers(prev => ({
         ...prev,
-        [currentQuestion.id || '']: option,
         [currentQuestion.title || '']: option,
       }));
     }
@@ -444,12 +541,8 @@ export default function ComplianceWizard() {
               currentStep < 3 ? 'Analyzing Context...' : currentStep < 7 ? 'Mapping Risk Profile...' : 'Finalizing Strategy...'
             ) : 'Generating 2026 Audit Bundle...'}
           </h2>
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-r-xl text-emerald-600 dark:text-emerald-400 text-sm font-bold uppercase tracking-tight shadow-sm flex items-center gap-2">
-            <Zap className="w-4 h-4 animate-pulse" />
-            <span>POWERED BY PUTER.JS FREE AI ENGINE</span>
-          </motion.div>
-          <p className="text-foreground/40 leading-relaxed font-medium">
-            {isThinking ? 'Generating a unique question tailored to your risk profile.' : 'Our GPT-4o engine is building your high-fidelity compliance bundle.'}
+          <p className="text-foreground/50 leading-relaxed font-medium">
+            {isThinking ? 'Generating a unique question tailored to your risk profile.' : 'Our AI engine is building your high-fidelity compliance bundle.'}
           </p>
         </div>
         <div className="w-64 h-1.5 bg-foreground/5 rounded-full overflow-hidden">
@@ -498,7 +591,7 @@ export default function ComplianceWizard() {
           {currentQuestion && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {currentQuestion.options.map((option: string, idx: number) => {
-                const isSelected = answers[currentQuestion?.id || ''] === option;
+                const isSelected = answers[currentQuestion.title] === option;
                 return (
                   <motion.button
                     key={option}
@@ -512,7 +605,7 @@ export default function ComplianceWizard() {
                       'p-8 rounded-[2rem] text-left transition-all border-2 group relative overflow-hidden',
                       isSelected
                         ? 'bg-emerald-500/10 border-emerald-500 text-foreground'
-                        : 'bg-foreground/[0.03] border-foreground/[0.05] text-foreground/40 hover:bg-foreground/[0.05] hover:border-foreground/10'
+                        : 'bg-foreground/[0.03] border-foreground/[0.05] text-foreground/60 hover:bg-foreground/[0.05] hover:border-foreground/10'
                     )}
                   >
                     <div className="flex items-center justify-between relative z-10">
@@ -540,7 +633,7 @@ export default function ComplianceWizard() {
         <div className={cn('ml-auto', currentStep === 0 && 'w-full flex justify-end')}>
           <button
             onClick={next}
-            disabled={!currentQuestion || !answers[currentQuestion?.id || ''] || isThinking}
+            disabled={!currentQuestion || !answers[currentQuestion.title] || isThinking}
             className="px-10 py-5 bg-emerald-500 text-black font-extrabold rounded-2xl hover:bg-emerald-400 disabled:opacity-30 flex items-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all"
           >
             {currentStep === 9 ? 'Generate Report' : 'Continue'}

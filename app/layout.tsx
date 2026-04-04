@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
@@ -7,11 +7,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -19,7 +16,6 @@ export const metadata: Metadata = {
   description:
     "Generate enterprise-grade GDPR & HIPAA compliance bundles in under 5 minutes. Powered by AI. Built for startups, law clinics, and modern firms.",
   metadataBase: new URL("https://complainceai-pi.vercel.app"),
-
   alternates: { canonical: "/" },
   icons: { icon: "/favicon.ico" },
   openGraph: {
@@ -37,7 +33,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} h-full antialiased`}
       style={{ scrollBehavior: 'smooth' }}
       suppressHydrationWarning
     >
