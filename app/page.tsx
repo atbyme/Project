@@ -1,4 +1,4 @@
-import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText, Sparkles } from 'lucide-react';
+import { Shield, CheckCircle2, ArrowRight, Lock, Zap, FileText, Sparkles, AlertTriangle, Clock, DollarSign, TrendingUp, Users, Globe, Award } from 'lucide-react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { createClient } from '@/lib/server';
@@ -27,6 +27,7 @@ export default async function LandingPage() {
           </Link>
 
           <div className="flex items-center gap-6 text-sm text-foreground/50">
+            <a href="#why"      className="hidden md:block hover:text-foreground transition-colors">Why Us</a>
             <a href="#how"     className="hidden md:block hover:text-foreground transition-colors">How it works</a>
             <a href="#pricing" className="hidden md:block hover:text-foreground transition-colors">Pricing</a>
             {user && <Link href="/dashboard" className="hidden md:block hover:text-emerald-500 transition-colors font-medium">Archive</Link>}
@@ -89,6 +90,135 @@ export default async function LandingPage() {
             <div className="flex flex-wrap justify-center gap-x-16 gap-y-6 opacity-30">
               {['ACME LEGAL', 'MEDIX', 'DUE DILIGENCE', 'SECURELY', 'SHIELD LAW'].map((name) => (
                 <span key={name} className="text-xl font-bold tracking-tighter cursor-default hover:opacity-70 transition-opacity">{name}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* What It Solves */}
+        <section className="px-6 py-32 bg-gradient-to-b from-transparent via-emerald-500/[0.02] to-transparent">
+          <div className="max-w-7xl mx-auto space-y-20">
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl md:text-5xl font-bold">The Compliance Crisis</h2>
+              <p className="text-foreground/40 max-w-2xl mx-auto text-lg">Every day, businesses lose clients, face fines, and lose trust because they can't afford enterprise compliance.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  icon: DollarSign,
+                  title: '$3,000+ Per Audit',
+                  desc: 'Traditional compliance consultants charge thousands for a single report. Most small firms simply can\'t afford it — and risk everything.',
+                  stat: '73% of SMBs skip compliance due to cost',
+                  color: 'red',
+                },
+                {
+                  icon: Clock,
+                  title: 'Weeks of Delays',
+                  desc: 'Manual audits take 2-6 weeks. By the time you get your report, regulations may have changed. Speed is a competitive advantage.',
+                  stat: 'Average wait: 14 business days',
+                  color: 'amber',
+                },
+                {
+                  icon: AlertTriangle,
+                  title: 'Generic Templates',
+                  desc: 'Off-the-shelf compliance templates don\'t address your specific industry, size, or risk profile. One-size-fits-all means one-size-fits-none.',
+                  stat: '89% of templates miss key requirements',
+                  color: 'orange',
+                },
+              ].map((item) => (
+                <div key={item.title} className="glass-card p-8 rounded-3xl space-y-6 relative overflow-hidden group hover:border-red-500/20 transition-all">
+                  <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                    <item.icon className="w-7 h-7 text-red-500" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-xl font-bold">{item.title}</h3>
+                    <p className="text-foreground/40 leading-relaxed text-sm">{item.desc}</p>
+                  </div>
+                  <div className="pt-4 border-t border-foreground/5">
+                    <p className="text-xs font-bold text-red-400/60 uppercase tracking-wider">{item.stat}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Why ComplianceShield AI */}
+        <section id="why" className="px-6 py-32 scroll-mt-20">
+          <div className="max-w-7xl mx-auto space-y-20">
+            <div className="text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                <Award className="w-3.5 h-3.5" />
+                <span>The ComplianceShield Advantage</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold">Why Firms Choose Us</h2>
+              <p className="text-foreground/40 max-w-2xl mx-auto text-lg">AI-powered compliance that's faster, smarter, and built for the way modern businesses actually operate.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                {
+                  icon: Zap,
+                  title: '10-Question AI Audit',
+                  desc: 'Answer 10 smart, adaptive questions and get a complete compliance report in under 5 minutes. Our AI reads every answer and tailors the next question to your exact situation.',
+                  highlight: '5 minutes vs 14 days',
+                },
+                {
+                  icon: Shield,
+                  title: 'Industry-Specific Reports',
+                  desc: 'Healthcare, SaaS, Finance, Legal — every report is customized to your sector\'s specific regulations. No generic templates. No copy-paste compliance.',
+                  highlight: 'GDPR, HIPAA, SOC 2 & more',
+                },
+                {
+                  icon: TrendingUp,
+                  title: 'Close Deals Faster',
+                  desc: 'Enterprise clients demand compliance proof. Show them a professional, board-ready audit in minutes — not weeks. Win contracts your competitors lose.',
+                  highlight: '3x faster deal closure',
+                },
+                {
+                  icon: Globe,
+                  title: 'Built for Global Business',
+                  desc: 'Multi-jurisdiction compliance handled automatically. Whether you serve EU, US, or global clients — your reports cover every applicable regulation.',
+                  highlight: 'Multi-region support',
+                },
+              ].map((item) => (
+                <div key={item.title} className="glass-card p-10 rounded-3xl space-y-6 relative overflow-hidden group hover:border-emerald-500/20 transition-all">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+                    <item.icon className="w-7 h-7 text-emerald-500" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-xl font-bold">{item.title}</h3>
+                    <p className="text-foreground/40 leading-relaxed">{item.desc}</p>
+                  </div>
+                  <div className="pt-4 border-t border-foreground/5">
+                    <p className="text-xs font-bold text-emerald-500/60 uppercase tracking-wider">{item.highlight}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Importance / Trust Section */}
+        <section className="px-6 py-32 bg-foreground/[0.015] border-y border-foreground/[0.06]">
+          <div className="max-w-5xl mx-auto space-y-16">
+            <div className="text-center space-y-4">
+              <h2 className="text-4xl md:text-5xl font-bold">Why Compliance Can't Wait</h2>
+              <p className="text-foreground/40 max-w-2xl mx-auto text-lg">Non-compliance isn't just a legal risk — it's a business survival risk.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+              {[
+                { number: '$2.4M', label: 'Average GDPR fine per violation', sublabel: 'Source: EU Data Protection Board 2025' },
+                { number: '68%', label: 'of clients check compliance before signing', sublabel: 'Source: B2B Trust Survey 2025' },
+                { number: '43%', label: 'of data breaches happen at non-compliant firms', sublabel: 'Source: CyberRisk Intelligence Report' },
+              ].map((stat) => (
+                <div key={stat.label} className="space-y-3">
+                  <div className="text-5xl md:text-6xl font-black text-emerald-500">{stat.number}</div>
+                  <p className="text-foreground/60 font-semibold">{stat.label}</p>
+                  <p className="text-xs text-foreground/25">{stat.sublabel}</p>
+                </div>
               ))}
             </div>
           </div>
